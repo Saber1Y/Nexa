@@ -240,7 +240,7 @@ const Landing = () => {
                 icon: Rocket,
                 title: "Stellar-Scale Throughput",
                 description:
-                  "5-second finality and sub-cent fees enable high-volume audit registries. The bridge is stateless — scale horizontally without bottlenecks.",
+                  "5-second finality and sub-cent fees enable high-volume audit registries. The bridge is stateless - scale horizontally without bottlenecks.",
               },
             ].map((feature) => (
               <div
