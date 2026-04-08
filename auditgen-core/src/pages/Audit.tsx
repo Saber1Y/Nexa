@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Briefcase, FileSearch, Zap, Sparkles, ExternalLink, RotateCcw, ShieldCheck, CreditCard, Activity, Star, Link, Coins, Target } from "lucide-react";
+import { Briefcase, FileSearch, Zap, Sparkles, ExternalLink, RotateCcw, ShieldCheck, CreditCard, Activity, Star, Link, Coins, Target, AlertTriangle, Fuel } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import ResumeInput from "@/components/ResumeInput";
@@ -39,7 +39,7 @@ const Audit = () => {
     availableChallenges, 
     setAvailableChallenges 
   } = useMpp();
-  const { address, isConnected } = useWallet();
+  const { address, isConnected, hasUsdcTrustline } = useWallet();
 
   const handleSubmit = useCallback(async () => {
     if (!jobTitle || !resumeText) return;
@@ -198,6 +198,20 @@ const Audit = () => {
           </>
         )}
 
+        {/* Trustline Warning */}
+        {isConnected && hasUsdcTrustline === false && !availableChallenges && !results && (
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 animate-in fade-in duration-300">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+            <div className="text-sm">
+              <span className="font-semibold">USDC Trustline Missing.</span>{" "}
+              You can still pay with XLM, or{" "}
+              <a href="https://laboratory.stellar.org/#trust?network=test" target="_blank" rel="noopener noreferrer" className="font-bold underline hover:no-underline">
+                add trustline →
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Currency Selection UI */}
         {availableChallenges && (
           <div className="glass-card p-6 space-y-4 border-primary animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -207,7 +221,7 @@ const Audit = () => {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-foreground">Select Payment Method</h3>
-                <p className="text-sm text-muted-foreground">The Nexa Bridge requires a micro-payment via x402.</p>
+                <p className="text-sm text-muted-foreground">The Nexa Bridge requires a micro-payment via MPP.</p>
               </div>
             </div>
 
@@ -253,8 +267,15 @@ const Audit = () => {
                         {isUsdc ? <div className="text-[10px] font-bold">U</div> : <Target className="w-4 h-4" />}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-foreground">{assetName}</p>
-                        <p className="text-xs text-muted-foreground">Stellar {isUsdc ? 'USDC SAC' : 'Native Asset'}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-foreground">{assetName}</p>
+                          {isUsdc && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/30 text-[9px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wider">
+                              <Fuel className="w-2.5 h-2.5" /> Zero Gas
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Stellar {isUsdc ? 'USDC SAC · Fee Sponsored' : 'Native Asset'}</p>
                       </div>
                     </div>
                     <div className="text-right">

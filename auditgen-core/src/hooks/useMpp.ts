@@ -70,6 +70,10 @@ export function useMpp() {
           setIsPaying(true);
 
           // ── Step 3: Build Soroban SAC transfer invocation ─────────────
+          // NOTE: The server has feePayer enabled for USDC, but that sponsored
+          // path is for programmatic agents only (zero-source tx). Browser wallets
+          // like Freighter always use the unsponsored path — the server detects
+          // this automatically and handles both cases.
           const sorobanServer = new rpc.Server("https://soroban-testnet.stellar.org");
           const sourceAccount = await sorobanServer.getAccount(walletAddress);
           const contract = new Contract(currency);

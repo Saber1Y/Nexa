@@ -41,6 +41,10 @@ const mppUsdc = Mppx.create({
       recipient: process.env.STELLAR_PUBLIC_KEY,
       currency: USDC_SAC_TESTNET,
       network: "stellar:testnet",
+      // Bridge sponsors XLM gas fees for USDC payments → users pay $0 gas
+      feePayer: {
+        envelopeSigner: process.env.STELLAR_SECRET_KEY,
+      },
     }),
   ],
 });
