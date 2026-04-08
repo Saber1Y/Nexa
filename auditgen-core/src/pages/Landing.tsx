@@ -65,13 +65,7 @@ const Landing = () => {
                   Launch Bridge
                   <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
                 </Button>
-                <a 
-                  href="https://github.com/mrnetwork0001/Nexa" 
-                  target="_blank" 
-                  className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <ExternalLink className="w-4 h-4" /> View Protocol
-                </a>
+
               </div>
             </div>
 
