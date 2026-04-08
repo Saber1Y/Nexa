@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Briefcase, FileSearch, Zap, Sparkles, ExternalLink, RotateCcw, ShieldCheck, CreditCard, Activity, Star, Link } from "lucide-react";
+import { Briefcase, FileSearch, Zap, Sparkles, ExternalLink, RotateCcw, ShieldCheck, CreditCard, Activity, Star, Link, Coins, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import ResumeInput from "@/components/ResumeInput";
@@ -31,7 +31,14 @@ const Audit = () => {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { fetchWithMpp, isPaying, status, txHash: mppTxHash } = useMpp();
+  const { 
+    fetchWithMpp, 
+    isPaying, 
+    status, 
+    txHash: mppTxHash, 
+    availableChallenges, 
+    setAvailableChallenges 
+  } = useMpp();
   const { address, isConnected } = useWallet();
 
   const handleSubmit = useCallback(async () => {
@@ -53,6 +60,14 @@ const Audit = () => {
           resumeText,
         }),
       });
+
+      // If the hook detected multiple payment methods, it returns
+      // { paymentRequired: true } and populates availableChallenges.
+      // We stop loading so the currency selection UI can render.
+      if (data?.paymentRequired) {
+        setLoading(false);
+        return;
+      }
 
       if (data.success) {
         setResults(data.results);
@@ -177,10 +192,92 @@ const Audit = () => {
                 <ShieldCheck className="w-3 h-3" /> Agent Mode: Bridge will handle autonomous payments.
               </p>
               {error && (
-                <p className="text-sm text-destructive">{error}</p>
+                <p className="text-sm text-destructive font-medium bg-destructive/5 p-2 rounded border border-destructive/10">{error}</p>
               )}
             </div>
           </>
+        )}
+
+        {/* Currency Selection UI */}
+        {availableChallenges && (
+          <div className="glass-card p-6 space-y-4 border-primary animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Coins className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">Select Payment Method</h3>
+                <p className="text-sm text-muted-foreground">The Nexa Bridge requires a micro-payment via x402.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {availableChallenges.map((challenge, idx) => {
+                const { amount, currency } = challenge.request as { amount: string; currency: string };
+                const isUsdc = currency === "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
+                const assetName = isUsdc ? "USDC" : "XLM";
+                const humanAmount = (Number(amount) / 1e7).toFixed(2);
+
+                return (
+                  <button
+                    key={idx}
+                    onClick={async () => {
+                      setAvailableChallenges(null);
+                      setLoading(true);
+                      setError(null);
+                      try {
+                        const data = await fetchWithMpp("http://localhost:3402/api/audit", address || "", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            jobTitle,
+                            jobDescription,
+                            mustHaveSkills,
+                            resumeText,
+                          }),
+                        }, challenge);
+                        if (data?.success) {
+                          setResults(data.results);
+                          setTxHash(data.results.txHash || "Finalized on GenLayer");
+                        }
+                      } catch (e: unknown) {
+                        setError((e as Error)?.message || "Payment failed");
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border hover:border-primary hover:bg-primary/5 transition-all group text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isUsdc ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                        {isUsdc ? <div className="text-[10px] font-bold">U</div> : <Target className="w-4 h-4" />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">{assetName}</p>
+                        <p className="text-xs text-muted-foreground">Stellar {isUsdc ? 'USDC SAC' : 'Native Asset'}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-mono font-bold text-primary">{humanAmount}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Per Audit</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full text-muted-foreground text-xs"
+              onClick={() => {
+                setAvailableChallenges(null);
+                setLoading(false);
+              }}
+            >
+              Cancel Audit
+            </Button>
+          </div>
         )}
 
         {/* MPP Handshake Monitor */}
@@ -247,7 +344,7 @@ const Audit = () => {
                       <Star className="w-4 h-4 text-amber-500" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-foreground">USDC/XLM Payment</p>
+                      <p className="text-xs font-semibold text-foreground">{results.paymentAssetLabel || "Stellar Payment"}</p>
                       <p className="text-[10px] text-muted-foreground font-mono truncate">
                         {String(results.stellarPaymentHash).slice(0, 16)}…
                       </p>

@@ -17,18 +17,20 @@ export function useMpp() {
   const [isPaying, setIsPaying] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [availableChallenges, setAvailableChallenges] = useState<Challenge[] | null>(null);
 
   const fetchWithMpp = useCallback(
-    async (url: string, walletAddress: string, options: RequestInit = {}) => {
+    async (url: string, walletAddress: string, options: RequestInit = {}, selectedChallenge?: Challenge) => {
       if (!walletAddress) {
         throw new Error("Wallet not connected");
       }
 
       setIsPaying(false);
-      setStatus("Initiating Audit...");
+      setStatus("Initiating Request...");
+      setAvailableChallenges(null);
 
       try {
-        // ── Step 1: Initial request → triggers 402 ──────────────────────
+        // ── Step 1: Request with optional credential ───────────────────
         let response = await fetch(url, {
           ...options,
           headers: {
@@ -38,39 +40,45 @@ export function useMpp() {
         });
 
         // ── Step 2: Handle 402 Payment Required ─────────────────────────
-        if (response.status === 402) {
-          // Use the mppx library to properly parse the challenge.
-          // This ensures HMAC-bound IDs and canonical JSON serialization
-          // match exactly what the server expects.
-          const challenge = Challenge.fromResponse(response);
+        if (response.status === 402 && !selectedChallenge) {
+          // Detect all available methods (USDC, XLM, etc.)
+          const challenges = Challenge.fromResponseList(response);
+          console.log("MPP Challenges detected:", challenges);
+          
+          if (challenges.length > 1) {
+            setAvailableChallenges(challenges);
+            setStatus("💳 Select Payment Method...");
+            return { paymentRequired: true, challenges };
+          }
+          
+          // Default to the first one if only one exists
+          selectedChallenge = challenges[0];
+        }
 
-          console.log("MPP Challenge (parsed via mppx):", challenge);
-
-          const { amount, currency, recipient } = challenge.request as {
+        if (selectedChallenge) {
+          const { amount, currency } = selectedChallenge.request as {
             amount: string;
             currency: string;
             recipient: string;
           };
+          
+          const isUsdc = currency === "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
+          const assetName = isUsdc ? "USDC" : "XLM";
           const humanAmount = (Number(amount) / 1e7).toFixed(2);
 
-          setStatus(
-            `💳 402 Payment Required: ${humanAmount} USDC. Building Soroban transaction...`
-          );
+          setStatus(`💳 Paying ${humanAmount} ${assetName}...`);
           setIsPaying(true);
 
           // ── Step 3: Build Soroban SAC transfer invocation ─────────────
-          const sorobanServer = new rpc.Server(
-            "https://soroban-testnet.stellar.org"
-          );
+          const sorobanServer = new rpc.Server("https://soroban-testnet.stellar.org");
           const sourceAccount = await sorobanServer.getAccount(walletAddress);
-
           const contract = new Contract(currency);
           const stellarAmount = BigInt(amount);
 
           const transferOp = contract.call(
             "transfer",
             new Address(walletAddress).toScVal(),
-            new Address(recipient).toScVal(),
+            new Address(selectedChallenge.request.recipient as string).toScVal(),
             nativeToScVal(stellarAmount, { type: "i128" })
           );
 
@@ -82,65 +90,49 @@ export function useMpp() {
             .setTimeout(180)
             .build();
 
-          // ── Step 4: Simulate & prepare (adds Soroban resource data) ───
-          setStatus("💳 Simulating transaction on Soroban RPC...");
+          // ── Step 4: Simulate & sign ───────────────────────────────────
+          setStatus(`⌛ Preparing ${assetName} transfer...`);
           const prepared = await sorobanServer.prepareTransaction(tx);
-
-          // ── Step 5: Sign with Freighter ────────────────────────────────
-          setStatus("💳 Please sign in Freighter wallet...");
-          const preparedXdr = prepared.toXDR();
-          const signResult = await signTransaction(preparedXdr, {
+          
+          setStatus("💳 Sign with Freighter...");
+          const signResult = await signTransaction(prepared.toXDR(), {
             networkPassphrase: Networks.TESTNET,
           });
-          const signedXdr = signResult.signedTxXdr;
 
-          setStatus("⌛ Verifying payment & finalizing audit...");
+          setStatus("⌛ Verifying payment...");
           setIsPaying(false);
 
-          // ── Step 6: Build the credential using mppx library ───────────
-          // Credential.serialize() ensures:
-          // 1. Canonical JSON serialization via Json.canonicalize (ox)
-          // 2. Proper base64url encoding matching server expectations
-          // 3. Correct HMAC verification on the server side
+          // ── Step 5: Build credential and retry ────────────────────────
           const authHeader = Credential.serialize({
-            challenge,
+            challenge: selectedChallenge,
             payload: {
               type: "transaction" as const,
-              transaction: signedXdr,
+              transaction: signResult.signedTxXdr,
             },
             source: `did:pkh:stellar:testnet:${walletAddress}`,
           });
 
-          console.log("Authorization header (via mppx Credential.serialize)");
-
-          // ── Step 7: Retry with credential ─────────────────────────────
           response = await fetch(url, {
             ...options,
             headers: {
               ...options.headers,
               Authorization: authHeader,
+              Accept: "application/json",
             },
           });
 
           if (response.status === 402) {
-            // Extract server error details if available
-            let detail = "";
-            try {
-              const errBody = await response.json();
-              detail = errBody?.error || errBody?.message || errBody?.detail || "";
-              if (typeof detail === "object") detail = JSON.stringify(detail);
-            } catch { /* ignore */ }
-            throw new Error(
-              `Payment transaction was rejected by the server.${detail ? " " + detail : ""}`
-            );
+            const errBody = await response.json().catch(() => ({}));
+            throw new Error(`Payment rejected: ${errBody.error || "Invalid signature"}`);
           }
         }
 
-        // ── Step 8: Process result ──────────────────────────────────────
+        // ── Step 6: Process result ──────────────────────────────────────
         const data = await response.json();
         if (data.success) {
-          setStatus("✅ Audit Complete!");
+          setStatus("✅ Complete!");
           if (data.results?.txHash) setTxHash(data.results.txHash);
+          setAvailableChallenges(null);
         } else if (data.error) {
           throw new Error(data.error);
         }
@@ -148,8 +140,9 @@ export function useMpp() {
         return data;
       } catch (e: unknown) {
         const msg = (e as Error).message || "Process failed";
-        console.error(e);
-        setStatus(`❌ Error: ${msg}`);
+        console.error("MPP Error:", e);
+        setStatus(`❌ ${msg}`);
+        setAvailableChallenges(null);
         throw e;
       } finally {
         setIsPaying(false);
@@ -158,5 +151,5 @@ export function useMpp() {
     []
   );
 
-  return { fetchWithMpp, isPaying, status, txHash };
+  return { fetchWithMpp, isPaying, status, txHash, availableChallenges, setAvailableChallenges };
 }

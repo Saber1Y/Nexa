@@ -30,9 +30,10 @@ const horizon = new Horizon.Server("https://horizon-testnet.stellar.org");
 const bridgeKeypair = Keypair.fromSecret(process.env.STELLAR_SECRET_KEY);
 
 // ─── MPP Configuration ───────────────────────────────────────────────────────
-// Accepts both USDC and XLM as payment methods. Agents choose their currency.
-// This demonstrates deep understanding of the Stellar ecosystem.
-const mppx = Mppx.create({
+// Two separate Mppx instances — one per currency. This avoids the mppx library
+// limitation where two methods with the same name/intent ("stellar/charge")
+// overwrite each other in the internal handler map.
+const mppUsdc = Mppx.create({
   secretKey: process.env.STELLAR_SECRET_KEY,
   realm: "Nexa Bridge",
   methods: [
@@ -41,6 +42,13 @@ const mppx = Mppx.create({
       currency: USDC_SAC_TESTNET,
       network: "stellar:testnet",
     }),
+  ],
+});
+
+const mppXlm = Mppx.create({
+  secretKey: process.env.STELLAR_SECRET_KEY,
+  realm: "Nexa Bridge",
+  methods: [
     stellar.charge({
       recipient: process.env.STELLAR_PUBLIC_KEY,
       currency: XLM_SAC_TESTNET,
@@ -48,6 +56,10 @@ const mppx = Mppx.create({
     }),
   ],
 });
+
+// Pre-configured handlers (each instance has only one method → `charge` works)
+const usdcHandler = mppUsdc.charge({ amount: "1", description: "Autonomous AI Resume Audit - Nexa Bridge (USDC)" });
+const xlmHandler  = mppXlm.charge({ amount: "10", description: "Autonomous AI Resume Audit - Nexa Bridge (XLM)" });
 
 async function mppGuard(req, res, next) {
   const webReq = {
@@ -59,31 +71,84 @@ async function mppGuard(req, res, next) {
   };
 
   try {
-    const result = await mppx.charge({
-      amount: "1",
-      description: "Autonomous AI Resume Audit - Nexa Bridge",
-    })(webReq);
+    const authHeader = req.header("Authorization");
+
+    if (!authHeader || !authHeader.startsWith("Payment ")) {
+      // ── No credential: issue merged 402 with both currencies ────────
+      const [usdcResult, xlmResult] = await Promise.all([
+        usdcHandler(webReq),
+        xlmHandler(webReq),
+      ]);
+
+      // Merge WWW-Authenticate headers from both challenges
+      const mergedHeaders = new Headers();
+      mergedHeaders.set("Cache-Control", "no-store");
+
+      for (const result of [usdcResult, xlmResult]) {
+        if (result.status === 402) {
+          const wwwAuth = result.challenge.headers.get("WWW-Authenticate");
+          if (wwwAuth) mergedHeaders.append("WWW-Authenticate", wwwAuth);
+        }
+      }
+
+      // Use the first body for the problem-details JSON
+      const body = await usdcResult.challenge.json();
+      const contentType = usdcResult.challenge.headers.get("Content-Type");
+      if (contentType) mergedHeaders.set("Content-Type", contentType);
+
+      console.log("📤 Returned 402 Challenge (USDC + XLM)");
+      mergedHeaders.forEach((value, key) => res.setHeader(key, value));
+      return res.status(402).json(body);
+    }
+
+    // ── Credential present: dispatch to the correct handler ───────────
+    // Try USDC first, fall back to XLM
+    let result;
+    try {
+      result = await usdcHandler(webReq);
+      if (result.status === 402) {
+        // USDC rejected — try XLM
+        result = await xlmHandler(webReq);
+      }
+    } catch {
+      result = await xlmHandler(webReq);
+    }
 
     if (result.status === 402) {
-      console.log("Returned 402 Challenge (Either first request or rejected payment)");
+      console.log("📤 Payment credential rejected");
       const headers = result.challenge.headers;
       headers.forEach((value, key) => res.setHeader(key, value));
       return res.status(402).json(await result.challenge.json());
     }
-    
-    if (result.status !== 200 && result.status !== 201) {
-       console.error("❌ MPP Validation Failed! Status:", result.status, "Details:", JSON.stringify(result));
-       if (result.errors) console.error("Validation Errors:", result.errors);
+
+    // ── Extract the Stellar tx hash from the receipt ────────────────
+    // withReceipt() returns a Response with a Payment-Receipt header
+    // that contains a JSON receipt including the `reference` (tx hash).
+    let stellarPaymentHash = null;
+    if (result.withReceipt) {
+      const receiptResponse = result.withReceipt(new Response("OK"));
+      const receiptHeader = receiptResponse.headers.get("Payment-Receipt");
+      if (receiptHeader) {
+        try {
+          const receiptData = JSON.parse(atob(receiptHeader));
+          stellarPaymentHash = receiptData.reference || null;
+          console.log(`📡 MPP Receipt:`, JSON.stringify(receiptData, null, 2));
+        } catch {
+          // Try parsing as base64url
+          try {
+            const decoded = Buffer.from(receiptHeader, "base64url").toString();
+            const receiptData = JSON.parse(decoded);
+            stellarPaymentHash = receiptData.reference || null;
+            console.log(`📡 MPP Receipt (base64url):`, JSON.stringify(receiptData, null, 2));
+          } catch {
+            console.log(`📡 MPP Receipt header (raw):`, receiptHeader);
+            stellarPaymentHash = receiptHeader;
+          }
+        }
+      }
     }
 
-    req.mppReceipt = result.receipt;
-    if (req.mppReceipt) {
-      console.log(`📡 MPP Receipt Received:`, JSON.stringify(req.mppReceipt, null, 2));
-    } else {
-      // Fallback: check if result itself has receipt-like properties
-      console.log(`📡 MPP Result keys:`, Object.keys(result));
-      if (result.reference) req.mppReceipt = result;
-    }
+    req.stellarPaymentHash = stellarPaymentHash;
     next();
   } catch (error) {
     console.error("❌ MPP Guard Error:", error.message);
@@ -138,9 +203,11 @@ app.get("/health", (req, res) => {
 
 app.post("/api/audit", mppGuard, async (req, res) => {
   try {
-    // Extract the Stellar payment tx hash from the MPP receipt
-    const stellarPaymentHash = req.mppReceipt?.reference || null;
-    console.log(`✅ Payment verified (Stellar Tx: ${stellarPaymentHash}). Starting GenLayer audit...`);
+    // Extract the Stellar payment tx hash from the MPP guard
+    const stellarPaymentHash = req.stellarPaymentHash || null;
+    const paymentAssetLabel = stellarPaymentHash ? "Stellar Payment" : "Payment";
+
+    console.log(`✅ ${paymentAssetLabel} verified (Stellar Tx: ${stellarPaymentHash}). Starting GenLayer audit...`);
 
     const { jobTitle, jobDescription, mustHaveSkills, resumeText } = req.body;
     
@@ -180,6 +247,7 @@ app.post("/api/audit", mppGuard, async (req, res) => {
     results.stellarPaymentHash = stellarPaymentHash; // Stellar USDC payment tx
     results.stellarAttestationHash = attestationHash; // Stellar attestation tx
     results.attestationDigest = attestationDigest.toString("hex"); // The SHA-256 digest
+    results.paymentAssetLabel = paymentAssetLabel; // Label for UI (USDC or XLM)
 
     res.json({ success: true, screeningId, results });
   } catch (error) {
