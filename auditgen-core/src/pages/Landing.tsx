@@ -298,7 +298,6 @@ const Landing = () => {
       <footer className="border-t border-border/50 py-12">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-muted-foreground font-medium">
           <div className="flex items-center gap-3">
-            <Zap className="w-4 h-4 text-primary" />
             Nexa Bridge · Built for Agents on Stellar
           </div>
           <div className="text-muted-foreground">
@@ -315,7 +314,6 @@ const Landing = () => {
           <div className="flex items-center gap-4">
             <a href="https://stellar.org" target="_blank" className="hover:text-foreground transition-colors">Stellar</a>
             <a href="https://genlayer.com" target="_blank" className="hover:text-foreground transition-colors">GenLayer</a>
-            <a href="https://paymentauth.org" target="_blank" className="hover:text-foreground transition-colors text-primary">MPP</a>
           </div>
         </div>
       </footer>
