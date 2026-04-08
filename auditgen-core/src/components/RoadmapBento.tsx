@@ -1,23 +1,23 @@
 const roadmapItems = [
   {
-    emoji: "🏛️",
-    title: "The Consensus Council Customizer",
+    emoji: "🤖",
+    title: "A2A Service Marketplace",
     description:
-      "Hand-select your AI validator models (Llama, GPT, Claude) for every audit for ultimate trust.",
+      "An autonomous registry allowing AI agents to discover, negotiate, and pay for specialized tools via Nexa.",
     className: "md:col-span-2",
   },
   {
-    emoji: "🧠",
-    title: "AI-Generated 'Hard Skill' Quizzes",
+    emoji: "💳",
+    title: "Multi-Currency Rails",
     description:
-      "Instant technical assessments based on the audited skills for on-chain verification.",
+      "Expand payment options beyond USDC to include EURC, XLM, and other Stellar stablecoins.",
     className: "md:col-span-1",
   },
   {
-    emoji: "💸",
-    title: "Audit-to-Hire Escrow Payments",
+    emoji: "🔓",
+    title: "Audit Verification SDK",
     description:
-      "Secure hiring bonuses in a smart contract escrow that only unlocks upon a successful audit.",
+      "A lightweight library for developers to verify Nexa audit receipts and attestations in their own DApps.",
     className: "md:col-span-3",
   },
 ];
@@ -31,7 +31,7 @@ const RoadmapBento = () => {
             Roadmap
           </p>
           <h2 className="text-3xl md:text-5xl font-extrabold text-foreground font-serif">
-            What's <span className="gradient-text">next</span>
+            What's <span className="gradient-text">next</span> for Nexa
           </h2>
         </div>
 

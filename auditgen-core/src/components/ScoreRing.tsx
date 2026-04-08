@@ -6,8 +6,9 @@ interface ScoreRingProps {
 const ScoreRing = ({ score, size = 160 }: ScoreRingProps) => {
   const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
+  const displayScore = score <= 10 ? score * 10 : score;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
+  const offset = circumference - (displayScore / 100) * circumference;
 
   const getColor = () => {
     if (score >= 75) return "hsl(var(--success))";
@@ -41,7 +42,7 @@ const ScoreRing = ({ score, size = 160 }: ScoreRingProps) => {
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-4xl font-extrabold text-foreground">{score}</span>
+        <span className="text-4xl font-extrabold text-foreground">{displayScore}</span>
         <span className="text-xs font-medium text-muted-foreground">/ 100</span>
       </div>
     </div>

@@ -178,7 +178,7 @@ export async function getScreening(client, screeningId) {
 function normalizeResult(raw) {
   if (raw && typeof raw === "object") {
     return {
-      match_score: typeof raw.score === 'number' ? raw.score / 10 : (raw.match_score ?? 0),
+      match_score: typeof raw.score === 'number' ? raw.score : (raw.match_score ?? 0),
       verdict: raw.verdict ?? "Unknown",
       seniority: raw.seniority_estimate ?? raw.seniority ?? "Unknown",
       matched_skills: raw.matched_skills ?? [],

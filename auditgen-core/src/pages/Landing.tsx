@@ -11,6 +11,9 @@ import {
   ArrowRight,
   ExternalLink,
   ChevronRight,
+  Zap,
+  Cpu,
+  Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -37,27 +40,35 @@ const Landing = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-8 items-center">
             {/* Left Column – Text & CTA */}
             <div className="md:pl-8 lg:pl-16 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest mb-6 animate-pulse">
+                <Zap className="w-3 h-3" /> Agents on Stellar Hackathon
+              </div>
               <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6 font-serif">
-                <span className="gradient-text glow-text">Decentralized AI</span>
+                <span className="gradient-text glow-text">Autonomous AI</span>
                 <br />
-                <span className="text-foreground">Hiring Consensus</span>
+                <span className="text-foreground">Bridge</span>
               </h1>
 
               <p className="text-lg md:text-xl text-muted-foreground max-w-lg mb-10 leading-relaxed mx-auto md:mx-0">
-                Verify talent with the power of onchain AI. No human bias, just
-                immutable consensus on the GenLayer blockchain.
+                The first zero-trust bridge connecting <span className="text-foreground font-semibold">Stellar</span> payments with <span className="text-foreground font-semibold">GenLayer</span> AI consensus. Agents pay once, audit forever.
               </p>
 
-              <div className="flex items-center justify-center md:justify-start">
+              <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
                 <Button
                   size="lg"
                   onClick={() => navigate("/audit")}
-                  className="gradient-primary text-primary-foreground font-semibold px-10 py-6 text-lg hover:opacity-90 transition-all glow-border group"
+                  className="gradient-primary text-primary-foreground font-semibold px-10 py-6 text-lg hover:opacity-90 transition-all glow-border group w-full sm:w-auto"
                 >
-                  
-                  Audit Your CV
+                  Launch Bridge
                   <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
                 </Button>
+                <a 
+                  href="https://github.com/mrnetwork0001/Nexa" 
+                  target="_blank" 
+                  className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" /> View Protocol
+                </a>
               </div>
             </div>
 
@@ -75,39 +86,39 @@ const Landing = () => {
       {/* Language Marquee */}
       <LanguageMarquee />
 
-      {/* Why AuditGen Section */}
+      {/* Why Nexa Section */}
       <section className="relative py-24 border-t border-border/30">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-16">
             <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
-              Why AuditGen?
+              Why Nexa?
             </p>
             <h2 className="text-3xl md:text-5xl font-extrabold text-foreground font-serif">
-              Hiring, <span className="gradient-text">reimagined</span>
+              Built for <span className="gradient-text">Agentic Economies</span>
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                icon: BrainCircuit,
-                title: "AI-Native Consensus",
+                icon: Cpu,
+                title: "Stellar Asset Rails",
                 description:
-                  "Uses the Equivalence Principle to reach agreement across multiple independent AI validators.",
+                  "Native 1 USDC micropayments via Soroban SAC. Fast, liquid, and programmable dollar settlement.",
                 accent: "primary",
               },
               {
                 icon: ShieldCheck,
-                title: "Immutable Proof",
+                title: "Triple-Verified Proof",
                 description:
-                  "Every audit is permanently recorded onchain, creating a transparent record of candidate fit.",
+                  "Every audit anchors a SHA-256 digest on Stellar, a consensus artifact on GenLayer, and a USDC receipt.",
                 accent: "accent",
               },
               {
-                icon: Scale,
-                title: "Zero Bias",
+                icon: Globe,
+                title: "Chain Abstraction",
                 description:
-                  "AI validators don't care about names, genders, or backgrounds—only skills and raw potential.",
+                  "Hold USDC on Stellar. Get AI results from GenLayer. Nexa abstracts the multi-chain complexity for your agents.",
                 accent: "success",
               },
             ].map((feature) => (
@@ -130,50 +141,53 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* How it Works */}
-      <section className="relative py-24 border-t border-border/30">
+      {/* How it Works - MPP Flow */}
+      <section className="relative py-24 border-t border-border/30 bg-secondary/20">
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="text-center mb-16">
             <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
-              How It Works
+              Protocol Handshake
             </p>
             <h2 className="text-3xl md:text-5xl font-extrabold text-foreground font-serif">
-              Four steps to <span className="gradient-text">verified talent</span>
+              The <span className="gradient-text">MPP 402</span> Flow
             </h2>
+            <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
+              Nexa uses the Machine Payments Protocol to allow AI agents to negotiate and sign payments autonomously.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
               {
                 step: "01",
-                icon: Upload,
-                title: "Submit",
-                description: "Input the role and CV data.",
+                icon: ShieldCheck,
+                title: "Challenge",
+                description: "Bridge issues 402 challenge with HMAC-bound ID.",
               },
               {
                 step: "02",
-                icon: Search,
-                title: "Validate",
+                icon: CreditCard,
+                title: "Settle",
                 description:
-                  "Five independent AI validators analyze the fit.",
+                  "Agent signs 1 USDC Soroban transfer on Stellar.",
               },
               {
                 step: "03",
-                icon: Network,
-                title: "Consensus",
+                icon: BrainCircuit,
+                title: "Audit",
                 description:
-                  "Agreement is reached onchain via the GenLayer StudioNet.",
+                  "5 GenLayer AI nodes reach consensus on the resume.",
               },
               {
                 step: "04",
                 icon: Award,
-                title: "Verified Audit",
+                title: "Anchor",
                 description:
-                  "The final score, verdict, and seniority insights are generated.",
+                  "SHA-256 proof is anchored back on Stellar Memo.",
               },
             ].map((step, i) => (
               <div key={step.step} className="relative group">
-                <div className="glass-card p-6 h-full hover:border-primary/30 transition-all duration-300 hover:-translate-y-1">
+                <div className="glass-card p-6 h-full hover:border-primary/30 transition-all duration-300 bg-background/50">
                   <span className="text-3xl font-extrabold text-primary/20 font-mono block mb-3">
                     {step.step}
                   </span>
@@ -196,84 +210,71 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Powered by GenLayer */}
-      <section className="relative py-24 border-t border-border/30">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="glass-card p-10 md:p-14 border-l-4 border-l-primary relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
-            <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-4">
-              Powered by GenLayer
-            </p>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-foreground mb-5 font-serif">
-              The GenVM Advantage
-            </h2>
-            <p className="text-base text-muted-foreground leading-relaxed mb-8 max-w-3xl">
-              Built on the GenVM (GenLayer Virtual Machine), AuditGen is the
-              first of its kind to leverage cross-model LLM consensus at the
-              protocol level. We don't just use AI; we use{" "}
-              <span className="text-foreground font-semibold">
-                decentralized AI
-              </span>
-              .
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Roadmap */}
-      <RoadmapBento />
-
       {/* Final CTA */}
-      <section className="relative py-24 border-t border-border/30">
+      <section className="relative py-32">
         <div className="container mx-auto px-4 text-center max-w-3xl">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mb-4 font-serif">
-            Ready to <span className="gradient-text">audit</span>?
+          <h2 className="text-3xl md:text-5xl font-extrabold text-foreground mb-6 font-serif">
+            Ready to <span className="gradient-text">bridge</span>?
           </h2>
-          <p className="text-muted-foreground mb-8 text-lg">
-            Experience the future of decentralized hiring verification.
+          <p className="text-muted-foreground mb-10 text-lg">
+            Experience the future of autonomous value transfer between leading blockchains.
           </p>
           <Button
             size="lg"
             onClick={() => navigate("/audit")}
-            className="gradient-primary text-primary-foreground font-semibold px-10 py-6 text-lg hover:opacity-90 transition-all glow-border group"
+            className="gradient-primary text-primary-foreground font-semibold px-12 py-8 text-xl hover:opacity-90 transition-all glow-border group"
           >
-            
-            Launch Audit
-            <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+            Launch Bridge
+            <ArrowRight className="w-6 h-6 ml-2 transition-transform group-hover:translate-x-1" />
           </Button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 py-8">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            AuditGen - Powered by GenLayer Blockchain
+      <footer className="border-t border-border/50 py-12">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-muted-foreground font-medium">
+          <div className="flex items-center gap-3">
+            <Zap className="w-4 h-4 text-primary" />
+            Nexa Bridge · Built for Agents on Stellar
           </div>
           <div className="text-muted-foreground">
-            Built by{" "}
+            Created by{" "}
             <a
               href="https://x.com/encrypt_wizard"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:underline font-semibold"
+              className="text-primary hover:underline font-bold"
             >
               MrNetwork
             </a>
           </div>
-          <a
-            href="https://explorer-studio.genlayer.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
-          >
-            <ExternalLink className="w-3 h-3" />
-            View on Explorer
-          </a>
+          <div className="flex items-center gap-4">
+            <a href="https://stellar.org" target="_blank" className="hover:text-foreground transition-colors">Stellar</a>
+            <a href="https://genlayer.com" target="_blank" className="hover:text-foreground transition-colors">GenLayer</a>
+            <a href="https://paymentauth.org" target="_blank" className="hover:text-foreground transition-colors text-primary">MPP</a>
+          </div>
         </div>
       </footer>
     </div>
   );
 };
+
+// Dummy icons for mapping (already imported BrainCircuit etc above)
+const CreditCard = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="24" height="24" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <rect width="20" height="14" x="2" y="5" rx="2" />
+    <line x1="2" x2="22" y1="10" y2="10" />
+  </svg>
+);
 
 export default Landing;

@@ -1,11 +1,12 @@
 import { useState, useCallback } from "react";
-import { Briefcase, FileSearch, Zap, Sparkles, ExternalLink, RotateCcw, ShieldCheck, CreditCard, Activity } from "lucide-react";
+import { Briefcase, FileSearch, Zap, Sparkles, ExternalLink, RotateCcw, ShieldCheck, CreditCard, Activity, Star, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import ResumeInput from "@/components/ResumeInput";
 import ConsensusLoader from "@/components/ConsensusLoader";
 import AuditResults from "@/components/AuditResults";
 import { useMpp } from "@/hooks/useMpp";
+import { useWallet } from "@/hooks/useWallet";
 
 const Audit = () => {
 
@@ -15,10 +16,22 @@ const Audit = () => {
   const [resumeText, setResumeText] = useState("");
   const [loading, setLoading] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
-  const [results, setResults] = useState<Record<string, unknown> | null>(null);
+  const [results, setResults] = useState<{
+    match_score: number;
+    verdict: string;
+    seniority: string;
+    matched_skills: string[];
+    missing_skills: string[];
+    explanation: string;
+    stellarPaymentHash?: string;
+    stellarAttestationHash?: string;
+    attestationDigest?: string;
+    [key: string]: unknown;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { fetchWithMpp, isPaying, status, txHash: mppTxHash } = useMpp();
+  const { address, isConnected } = useWallet();
 
   const handleSubmit = useCallback(async () => {
     if (!jobTitle || !resumeText) return;
@@ -29,7 +42,7 @@ const Audit = () => {
 
     try {
       // Call the Nexa Bridge instead of direct GenLayer
-      const data = await fetchWithMpp("http://localhost:3402/api/audit", {
+      const data = await fetchWithMpp("http://localhost:3402/api/audit", address || "", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -51,21 +64,24 @@ const Audit = () => {
     } finally {
       setLoading(false);
     }
-  }, [jobTitle, jobDescription, mustHaveSkills, resumeText, fetchWithMpp]);
+  }, [jobTitle, jobDescription, mustHaveSkills, resumeText, fetchWithMpp, address]);
 
-  const canSubmit = jobTitle.trim() && resumeText.trim() && !loading && !isPaying;
+  const canSubmit = jobTitle.trim() && resumeText.trim() && !loading && !isPaying && isConnected && address;
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto px-4 py-8 pt-24 max-w-5xl space-y-8">
         {/* Hero */}
-        <div className="text-center space-y-3">
-          <h2 className="text-3xl md:text-4xl font-extrabold gradient-text glow-text">
-            AI-Powered Resume Screening
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest mx-auto">
+            <Zap className="w-3 h-3" /> Stellar ↔ GenLayer Protocol
+          </div>
+          <h2 className="text-3xl md:text-5xl font-extrabold gradient-text glow-text font-serif">
+            Nexa AI Bridge
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-sm">
-            Submit your resume for a decentralized AI audit on GenLayer. Get transparent, consensus-driven hiring insights recorded onchain.
+          <p className="text-muted-foreground max-w-2xl mx-auto text-sm leading-relaxed">
+            Execute autonomous AI audits across chain rails. Pay with <span className="text-foreground font-semibold">USDC on Stellar</span> to trigger <span className="text-foreground font-semibold">Consensus on GenLayer</span>.
           </p>
         </div>
 
@@ -175,19 +191,93 @@ const Audit = () => {
         {results && !loading && (
           <div className="space-y-6">
             <AuditResults data={results} />
-            {txHash && (
-              <div className="text-center">
-                <a
-                  href={`https://explorer-studio.genlayer.com/transactions/${txHash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  View on GenLayer Explorer
-                </a>
+
+            {/* On-Chain Verification Panel */}
+            <div className="glass-card p-5 space-y-4 border-primary/20">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4" /> On-Chain Verification
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Every audit is triple-verified across two blockchains. Click any link to verify independently.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Stellar Payment */}
+                {results.stellarPaymentHash && (
+                  <a
+                    href={`https://stellar.expert/explorer/testnet/tx/${results.stellarPaymentHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/40 transition-all group"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+                      <Star className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground">USDC Payment</p>
+                      <p className="text-[10px] text-muted-foreground font-mono truncate">
+                        {String(results.stellarPaymentHash).slice(0, 16)}…
+                      </p>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground ml-auto shrink-0 group-hover:text-primary transition-colors" />
+                  </a>
+                )}
+
+                {/* Stellar Attestation */}
+                {results.stellarAttestationHash && (
+                  <a
+                    href={`https://stellar.expert/explorer/testnet/tx/${results.stellarAttestationHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/40 transition-all group"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+                      <Link className="w-4 h-4 text-emerald-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground">Attestation</p>
+                      <p className="text-[10px] text-muted-foreground font-mono truncate">
+                        {String(results.stellarAttestationHash).slice(0, 16)}…
+                      </p>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground ml-auto shrink-0 group-hover:text-primary transition-colors" />
+                  </a>
+                )}
+
+                {/* GenLayer Consensus */}
+                {txHash && (
+                  <a
+                    href={`https://explorer-studio.genlayer.com/transactions/${txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/40 transition-all group"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center shrink-0">
+                      <Zap className="w-4 h-4 text-violet-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground">AI Consensus</p>
+                      <p className="text-[10px] text-muted-foreground font-mono truncate">
+                        {txHash.slice(0, 16)}…
+                      </p>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground ml-auto shrink-0 group-hover:text-primary transition-colors" />
+                  </a>
+                )}
               </div>
-            )}
+
+              {/* Attestation Digest */}
+              {results.attestationDigest && (
+                <div className="pt-2 border-t border-border/50">
+                  <p className="text-[10px] text-muted-foreground">
+                    <span className="font-semibold">Attestation Digest (SHA-256):</span>{" "}
+                    <code className="bg-secondary/70 px-1.5 py-0.5 rounded text-[10px] font-mono break-all">
+                      {String(results.attestationDigest)}
+                    </code>
+                  </p>
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-center">
               <Button
                 variant="outline"
@@ -212,10 +302,17 @@ const Audit = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 py-6 mt-12">
-        <div className="container mx-auto px-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <Zap className="w-3.5 h-3.5 text-primary" />
-          Powered by GenLayer Blockchain
+      <footer className="border-t border-border/50 py-8 mt-12">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-muted-foreground font-medium">
+          <div className="flex items-center gap-2">
+            <Zap className="w-3.5 h-3.5 text-primary" />
+            Nexa Bridge · Settlement by Stellar · Audit by GenLayer
+          </div>
+          <div className="flex gap-4">
+            <a href="https://stellar.org" target="_blank" className="hover:text-foreground">Stellar</a>
+            <a href="https://genlayer.com" target="_blank" className="hover:text-foreground">GenLayer</a>
+            <a href="https://paymentauth.org" target="_blank" className="hover:text-primary">MPP Protocol</a>
+          </div>
         </div>
       </footer>
     </div>

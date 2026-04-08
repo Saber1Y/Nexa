@@ -18,7 +18,7 @@ const Navbar = () => {
         <div className="container mx-auto flex items-center justify-between h-16 px-4">
           <Link to="/" className="flex items-center gap-3 group">
             <img src={logo} alt="Nexa" className="w-9 h-9 rounded-lg object-contain" width={36} height={36} />
-            <span className="text-lg font-bold gradient-text">Nexa Auditor</span>
+            <span className="text-lg font-bold gradient-text">Nexa Bridge</span>
           </Link>
 
           <div className="flex items-center gap-4">
