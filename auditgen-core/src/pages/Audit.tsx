@@ -344,10 +344,10 @@ const Audit = () => {
           <div className="space-y-6">
             <AuditResults data={results} />
 
-            {/* On-Chain Verification Panel */}
+            {/* Onchain Verification Panel */}
             <div className="glass-card p-5 space-y-4 border-primary/20">
               <h4 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" /> On-Chain Verification
+                <ShieldCheck className="w-4 h-4" /> Onchain Verification
               </h4>
               <p className="text-xs text-muted-foreground">
                 Every audit is triple-verified across two blockchains. Click any link to verify independently.

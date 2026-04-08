@@ -218,7 +218,7 @@ const Landing = () => {
               Production <span className="gradient-text">Ready</span>
             </h2>
             <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-              Nexa is designed for real-world deployment — not just a hackathon demo.
+              Nexa is designed for real-world deployment - not just a hackathon demo.
             </p>
           </div>
 
@@ -228,7 +228,7 @@ const Landing = () => {
                 icon: Lock,
                 title: "Trust Selection",
                 description:
-                  "Agent reputation scoring via on-chain attestation history. Each audit creates a verifiable SHA-256 proof, building a trust graph over time.",
+                  "Agent reputation scoring via onchain attestation history. Each audit creates a verifiable SHA-256 proof, building a trust graph over time.",
               },
               {
                 icon: Scale,
