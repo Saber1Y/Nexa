@@ -5,7 +5,7 @@
 <h1 align="center">Nexa — Autonomous AI Bridge</h1>
 
 <p align="center">
-  <strong>AI agents pay USDC on Stellar to get consensus-driven resume audits on GenLayer.</strong>
+  <strong>Nexa provides the decentralized Reasoning Layer for the Stellar economy. AI agents pay USDC/XLM on Stellar to get consensus-driven audits on GenLayer.</strong>
 </p>
 
 <p align="center">
@@ -31,7 +31,7 @@
 
 **Nexa** is an autonomous API bridge built for the [Agents on Stellar](https://stellar.org) hackathon. It demonstrates **chain abstraction** by using Stellar as a universal payment rail for decentralized AI services powered by the GenLayer blockchain.
 
-The concept is simple but powerful: **any AI agent or human user can pay 1 USDC on Stellar Testnet and receive a fully consensus-verified, onchain resume audit** — no API keys, no subscriptions, just a single Soroban transaction.
+The concept is simple but powerful: **any AI agent or human user can pay USDC or XLM on Stellar Testnet and receive a fully consensus-verified, onchain resume audit** — no API keys, no subscriptions, just a single Soroban transaction. **USDC payments are fee-sponsored, meaning users pay zero XLM gas.**
 
 ### What Makes Nexa Unique
 
@@ -41,7 +41,9 @@ The concept is simple but powerful: **any AI agent or human user can pay 1 USDC 
 | 🔗 **Chain Abstraction** | Users interact only with Stellar (via Freighter wallet). The GenLayer AI audit runs invisibly behind the bridge. |
 | 🧠 **Decentralized AI Consensus** | Five independent AI validators on GenLayer's StudioNet analyze each resume using the Equivalence Principle — not one AI model, but a consensus of many. |
 | 🛡️ **Triple-Verified** | Every audit produces three on-chain proofs: Stellar USDC payment, Stellar SHA-256 attestation, and GenLayer consensus transaction. |
-| 💳 **Soroban SAC Transfers** | Uses Soroban's Stellar Asset Contract (SAC) `transfer` invocations for payment, not classic Stellar operations. Fully MPP-compliant. |
+| ⛽ **Zero Gas USDC** | The Nexa Bridge sponsors XLM network fees for USDC payments. Agents pay only the dollar amount, with zero gas friction. |
+| 💳 **Multi-Currency** | Supports both USDC (via Soroban SAC) and native XLM payments, providing maximum flexibility for the Stellar ecosystem. |
+| 🛡️ **Trustline Pre-flight** | Intelligent UI detects missing USDC trustlines before payment, guiding users to prepare their wallets or switch to XLM. |
 | 🔏 **On-Chain Attestation** | Audit results are hashed (SHA-256) and anchored on Stellar via `Memo.hash`, creating an immutable, independently verifiable proof tying each payment to its audit outcome. |
 
 ---
@@ -201,7 +203,7 @@ Nexa implements [Stellar's MPP specification](https://paymentauth.org) for agent
 4. **Simulate & Prepare** — The transaction is simulated on Soroban RPC to attach resource metadata.
 5. **Sign** — The user signs the prepared transaction via Freighter wallet.
 6. **Submit Credential** — The signed XDR is wrapped in an MPP credential (`Authorization: Payment <base64url>`) and sent back.
-7. **Verify & Settle** — The server verifies the Soroban invocation, submits it to the network, and confirms settlement.
+7. **Verify & Settle** — The server verifies the Soroban invocation. For USDC payments, the server **sponsors the network fee** using its own account as a fee-payer, ensuring the user pays zero gas.
 8. **Execute Audit** — With payment confirmed, the server submits the audit job to GenLayer and waits for consensus.
 9. **Anchor Attestation** — After consensus, the server computes `SHA-256(screeningId | verdict | score | wallet)` and anchors it on Stellar as a `Memo.hash` transaction, creating an immutable on-chain proof.
 10. **Return Proofs** — The response includes the Stellar payment tx hash, the Stellar attestation tx hash, the GenLayer consensus tx hash, and the raw attestation digest.
@@ -427,6 +429,9 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 - [x] Agent-to-agent autonomous demo (`customer-agent-demo.mjs`)
 - [x] Multi-currency support (USDC + XLM)
 - [x] OpenZeppelin x402 Facilitator compatibility
+- [x] Fee-sponsored USDC settlement (Zero Gas for users)
+- [x] USDC Trustline pre-flight detection
+- [x] Production-ready UI (Trust, Arbitration, and Scalability sections)
 - [x] Bulk Audit Registry UI (Coming Soon preview)
 - [ ] Batch consensus on GenLayer v2.0
 - [ ] Payment channels for high-frequency agents
