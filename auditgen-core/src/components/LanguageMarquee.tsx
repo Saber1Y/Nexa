@@ -20,8 +20,8 @@ const LanguageMarquee = () => {
           <span className="gradient-text">50+ Languages.</span>
         </h2>
         <p className="text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-          AuditGen handles the translation and technical understanding
-          automatically using on-chain AI consensus.
+          Nexa Bridge handles the translation and technical understanding
+          automatically using onchain AI consensus.
         </p>
       </div>
 
