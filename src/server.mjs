@@ -78,7 +78,11 @@ async function mppGuard(req, res, next) {
 
     req.mppReceipt = result.receipt;
     if (req.mppReceipt) {
-      console.log(`📡 MPP Receipt Received: Method=${req.mppReceipt.method}, Ref=${req.mppReceipt.reference}`);
+      console.log(`📡 MPP Receipt Received:`, JSON.stringify(req.mppReceipt, null, 2));
+    } else {
+      // Fallback: check if result itself has receipt-like properties
+      console.log(`📡 MPP Result keys:`, Object.keys(result));
+      if (result.reference) req.mppReceipt = result;
     }
     next();
   } catch (error) {

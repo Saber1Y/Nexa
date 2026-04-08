@@ -236,7 +236,7 @@ const Audit = () => {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Stellar Payment */}
-                {results.stellarPaymentHash && (
+                {results.stellarPaymentHash ? (
                   <a
                     href={`https://stellar.expert/explorer/testnet/tx/${results.stellarPaymentHash}`}
                     target="_blank"
@@ -247,13 +247,23 @@ const Audit = () => {
                       <Star className="w-4 h-4 text-amber-500" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-foreground">USDC Payment</p>
+                      <p className="text-xs font-semibold text-foreground">USDC/XLM Payment</p>
                       <p className="text-[10px] text-muted-foreground font-mono truncate">
                         {String(results.stellarPaymentHash).slice(0, 16)}…
                       </p>
                     </div>
                     <ExternalLink className="w-3.5 h-3.5 text-muted-foreground ml-auto shrink-0 group-hover:text-primary transition-colors" />
                   </a>
+                ) : (
+                  <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/50 border border-emerald-500/20">
+                    <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+                      <Star className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground">Stellar Payment</p>
+                      <p className="text-[10px] text-emerald-500 font-semibold">✓ Verified via MPP</p>
+                    </div>
+                  </div>
                 )}
 
                 {/* Stellar Attestation */}
