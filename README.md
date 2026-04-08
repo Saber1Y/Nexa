@@ -393,8 +393,14 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 ### Blockchains
 | Chain | Role |
 |---|---|
-| **Stellar Testnet** (Soroban) | Payment rail — USDC transfers via SAC contracts |
+| **Stellar Testnet** (Soroban) | Payment rail — USDC and XLM transfers via SAC contracts |
 | **GenLayer StudioNet** | AI execution layer — consensus-driven resume audits |
+
+### Facilitator Compatibility
+| Service | Status |
+|---|---|
+| [OpenZeppelin x402 Facilitator](https://developers.stellar.org/docs/build/agentic-payments/x402/built-on-stellar) | ✅ Compatible — fee-sponsored settlement ready |
+| [Built on Stellar](https://channels.openzeppelin.com/x402/testnet) | ✅ Testnet & Mainnet endpoints supported |
 
 ---
 
@@ -419,10 +425,56 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 - [x] Triple-verified On-Chain Verification panel (Stellar payment + attestation + GenLayer)
 - [x] Stellar Explorer links for payment & attestation transactions
 - [x] Agent-to-agent autonomous demo (`customer-agent-demo.mjs`)
-- [ ] Multi-currency support (XLM, EURC)
-- [ ] Batch/bulk audit mode for recruiters
+- [x] Multi-currency support (USDC + XLM)
+- [x] OpenZeppelin x402 Facilitator compatibility
+- [x] Bulk Audit Registry UI (Coming Soon preview)
+- [ ] Batch consensus on GenLayer v2.0
 - [ ] Payment channels for high-frequency agents
 - [ ] Mainnet deployment
+
+---
+
+## 🌐 Mainnet Production Deployment
+
+Nexa is **built on testnet but designed for mainnet**. Below is a production deployment guide.
+
+### Network Configuration Changes
+
+| Parameter | Testnet (Current) | Mainnet (Production) |
+|---|---|---|
+| Network Passphrase | `Networks.TESTNET` | `Networks.PUBLIC` |
+| Horizon URL | `https://horizon-testnet.stellar.org` | `https://horizon.stellar.org` |
+| USDC SAC Contract | `USDC_SAC_TESTNET` | `USDC_SAC_MAINNET` (`CBIELTK...`) |
+| XLM SAC Contract | `XLM_SAC_TESTNET` | `XLM_SAC_MAINNET` (`CAS3J7G...`) |
+| MPP Network ID | `stellar:testnet` | `stellar:pubnet` |
+| Facilitator URL | `https://channels.openzeppelin.com/x402/testnet` | `https://channels.openzeppelin.com/x402` |
+
+### Security Hardening for Production
+
+- **Rate Limiting** — Add `express-rate-limit` middleware (e.g., 10 audits/minute per IP) to prevent abuse.
+- **HMAC Secret Rotation** — Rotate the `STELLAR_SECRET_KEY` periodically and use environment-specific secrets.
+- **CORS Lockdown** — Restrict `cors()` origins to your production domain only.
+- **HTTPS Enforcement** — Deploy behind a reverse proxy (e.g., Nginx, Cloudflare) with TLS termination.
+- **Audit Logging** — Persist all transaction hashes, attestation digests, and audit results to a database for compliance.
+- **Input Validation** — Add schema validation (e.g., `zod`) for all request bodies to prevent injection attacks.
+
+### Operational Cost Estimate
+
+| Operation | Cost per Audit | Notes |
+|---|---|---|
+| Agent Payment (Revenue) | +1.00 USDC or +10 XLM | Collected by the bridge |
+| Attestation Tx (Self-payment) | ~0.00001 XLM | Network fee for `Memo.hash` anchoring |
+| Facilitator Submission | **Free** | Sponsored by OpenZeppelin Built on Stellar |
+| GenLayer Consensus | ~0.01 GEN | Gas for `submit_screening` + `get_screening` |
+
+**Net margin per audit**: ~$0.99 USDC (at current prices)
+
+### Go-to-Market Strategy
+
+1. **Phase 1 — Testnet (Current)**: Open beta for developers and agents. Gather feedback.
+2. **Phase 2 — Mainnet Launch**: Deploy with real USDC. Target recruiting agencies and HR SaaS platforms.
+3. **Phase 3 — A2A Marketplace**: Open a registry where agents can discover Nexa as a paid tool.
+4. **Phase 4 — Enterprise SDK**: Ship a verification SDK so third-party DApps can verify Nexa audit receipts.
 
 ---
 

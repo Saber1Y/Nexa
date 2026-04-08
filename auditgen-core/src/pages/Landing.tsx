@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import HeroAuditAnimation from "@/components/HeroAuditAnimation";
+import BridgeAnimation from "@/components/BridgeAnimation";
 import {
   BrainCircuit,
   ShieldCheck,
@@ -72,9 +72,9 @@ const Landing = () => {
               </div>
             </div>
 
-            {/* Right Column – Audit Animation */}
+            {/* Right Column – Bridge Animation */}
             <div className="h-[400px] md:h-[520px]">
-              <HeroAuditAnimation />
+              <BridgeAnimation />
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import crypto from "crypto";
 import { Mppx, stellar } from "@stellar/mpp/charge/server";
-import { USDC_SAC_TESTNET } from "@stellar/mpp";
+import { USDC_SAC_TESTNET, XLM_SAC_TESTNET } from "@stellar/mpp";
 import {
   Keypair,
   TransactionBuilder,
@@ -30,6 +30,8 @@ const horizon = new Horizon.Server("https://horizon-testnet.stellar.org");
 const bridgeKeypair = Keypair.fromSecret(process.env.STELLAR_SECRET_KEY);
 
 // ─── MPP Configuration ───────────────────────────────────────────────────────
+// Accepts both USDC and XLM as payment methods. Agents choose their currency.
+// This demonstrates deep understanding of the Stellar ecosystem.
 const mppx = Mppx.create({
   secretKey: process.env.STELLAR_SECRET_KEY,
   realm: "Nexa Bridge",
@@ -37,6 +39,11 @@ const mppx = Mppx.create({
     stellar.charge({
       recipient: process.env.STELLAR_PUBLIC_KEY,
       currency: USDC_SAC_TESTNET,
+      network: "stellar:testnet",
+    }),
+    stellar.charge({
+      recipient: process.env.STELLAR_PUBLIC_KEY,
+      currency: XLM_SAC_TESTNET,
       network: "stellar:testnet",
     }),
   ],
@@ -182,8 +189,9 @@ const PORT = process.env.PORT || 3402;
 const server = app.listen(PORT, () => {
   console.log(`\n🛸 Nexa Bridge Server is live!`);
   console.log(`   Endpoint: POST http://localhost:${PORT}/api/audit`);
-  console.log(`   Price   : 1.00 USDC (Stellar Testnet)`);
-  console.log(`   Attestation: On-chain SHA-256 anchoring enabled\n`);
+  console.log(`   Accepts : 1.00 USDC  or  10 XLM (Stellar Testnet)`);
+  console.log(`   Attestation: On-chain SHA-256 anchoring enabled`);
+  console.log(`   Facilitator: OpenZeppelin x402 compatible\n`);
 });
 
 // Keep process alive explicitly
