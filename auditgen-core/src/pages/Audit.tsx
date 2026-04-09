@@ -91,9 +91,6 @@ const Audit = () => {
       <main className="container mx-auto px-4 py-8 pt-24 max-w-5xl space-y-8">
         {/* Hero */}
         <div className="text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest mx-auto">
-            <Zap className="w-3 h-3" /> Stellar ↔ GenLayer Protocol
-          </div>
           <h2 className="text-3xl md:text-5xl font-extrabold gradient-text glow-text font-serif">
             Nexa AI Bridge
           </h2>
