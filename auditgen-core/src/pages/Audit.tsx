@@ -98,7 +98,7 @@ const Audit = () => {
             Nexa AI Bridge
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-sm leading-relaxed">
-            Execute autonomous AI audits across chain rails. Pay with <span className="text-foreground font-semibold">USDC on Stellar</span> to trigger <span className="text-foreground font-semibold">Consensus on GenLayer</span>.
+            Execute autonomous AI audits across chain rails. Pay with <span className="text-foreground font-semibold">USDC or XLM on Stellar</span> to trigger <span className="text-foreground font-semibold">Consensus on GenLayer</span>.
           </p>
         </div>
 

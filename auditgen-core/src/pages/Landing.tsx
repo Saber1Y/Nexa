@@ -115,7 +115,7 @@ const Landing = () => {
                 icon: Globe,
                 title: "Chain Abstraction",
                 description:
-                  "Hold USDC on Stellar. Get AI results from GenLayer. Nexa abstracts the multi-chain complexity for your agents.",
+                  "Hold USDC or XLM on Stellar. Get AI results from GenLayer. Nexa abstracts the multi-chain complexity for your agents.",
                 accent: "success",
               },
             ].map((feature) => (
@@ -166,7 +166,7 @@ const Landing = () => {
                 icon: CreditCard,
                 title: "Settle",
                 description:
-                  "Agent signs 1 USDC Soroban transfer on Stellar.",
+                  "Agent signs 1 USDC or XLM Soroban transfer on Stellar.",
               },
               {
                 step: "03",

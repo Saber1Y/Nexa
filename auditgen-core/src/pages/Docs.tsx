@@ -85,7 +85,7 @@ const Docs = () => {
                   <Globe className="w-4 h-4 text-primary" /> Multi-Chain Abstraction
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  High-frequency AI services shouldn't be limited by chain UX. Nexa abstracts the multi-chain complexity. Users pay in <strong>USDC on Stellar</strong> (fast, low-cost) and receive results from <strong>GenLayer</strong> (powerful AI consensus).
+                  High-frequency AI services shouldn't be limited by chain UX. Nexa abstracts the multi-chain complexity. Users pay in <strong>USDC (gasless) or XLM on Stellar</strong> (fast, low-cost) and receive results from <strong>GenLayer</strong> (powerful AI consensus).
                 </p>
               </div>
             </div>
@@ -156,7 +156,7 @@ const Docs = () => {
                 <div className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Stellar Layer</div>
                 <h4 className="font-bold">Payment Receipt</h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Immutable proof of USDC transfer recorded on Stellar Publicnet. Verified via Horizon.
+                  Immutable proof of USDC or XLM transfer recorded on Stellar Publicnet. Verified via Horizon.
                 </p>
               </div>
               <div className="glass-card p-6 space-y-3 bg-purple-500/5 border-purple-500/20">
@@ -198,7 +198,7 @@ const Docs = () => {
                     <Scale className="w-4 h-4 text-blue-400" /> Scalable Economics
                   </h4>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    By using Stellar's Asset rails, we support micropayments that are cost-prohibitive on other L1s. Fee-sponsored USDC means zero friction for users.
+                    By using Stellar's Asset rails, we support micropayments that are cost-prohibitive on other L1s. Fee-sponsored USDC and native XLM support means zero friction for users.
                   </p>
                 </div>
               </div>
