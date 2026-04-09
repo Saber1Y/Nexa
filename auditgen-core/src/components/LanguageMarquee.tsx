@@ -13,7 +13,7 @@ const LanguageMarquee = () => {
   const doubled = [...languages, ...languages];
 
   return (
-    <section className="relative py-8 md:py-16 border-t border-border/30 overflow-hidden">
+    <section className="relative pt-6 pb-12 md:py-16 border-t border-border/30 overflow-hidden">
       <div className="container mx-auto px-4 max-w-4xl text-center mb-10">
         <h2 className="text-3xl md:text-4xl font-extrabold text-foreground font-serif mb-4">
           Truly Global. Audit Candidates in{" "}

@@ -38,7 +38,7 @@ const Landing = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-28 pb-4 md:pt-40 md:pb-32">
+      <section className="relative pt-28 pb-0 md:pt-40 md:pb-32">
         <div className="container mx-auto px-4 relative z-10 max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
             {/* Left Column – Text & CTA */}
@@ -67,7 +67,7 @@ const Landing = () => {
             </div>
 
             {/* Right Column – Bridge Animation */}
-            <div className="h-[280px] sm:h-[350px] md:h-[520px]">
+            <div className="h-[180px] sm:h-[300px] md:h-[520px] flex items-center justify-center mt-[-20px] md:mt-0">
               <BridgeAnimation />
             </div>
           </div>

@@ -245,7 +245,7 @@ const BridgeAnimation = () => {
   }, []);
 
   return (
-    <div className="relative w-full h-full min-h-[250px] sm:min-h-[350px] md:min-h-[420px] flex items-center justify-center">
+    <div className="relative w-full h-full min-h-[160px] sm:min-h-[300px] md:min-h-[420px] flex flex-col items-center justify-center overflow-visible">
       <canvas
         ref={canvasRef}
         className="w-full h-full"
