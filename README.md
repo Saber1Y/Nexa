@@ -1,54 +1,30 @@
-<p align="center">
-  <img src="docs/banner.png" alt="Nexa Banner" width="100%" />
-</p>
 
-<h1 align="center">Nexa — Autonomous AI Bridge</h1>
 
-<p align="center">
-  <strong>Nexa provides the decentralized Reasoning Layer for the Stellar economy. AI agents pay USDC/XLM on Stellar to get consensus-driven audits on GenLayer.</strong>
-</p>
-
-<p align="center">
-  <a href="https://stellar.org"><img alt="Stellar" src="https://img.shields.io/badge/Stellar-Testnet-7C3AED?style=for-the-badge&logo=stellar&logoColor=white" /></a>
-  <a href="https://genlayer.com"><img alt="GenLayer" src="https://img.shields.io/badge/GenLayer-StudioNet-10B981?style=for-the-badge" /></a>
-  <a href="https://paymentauth.org"><img alt="MPP" src="https://img.shields.io/badge/MPP-402_Protocol-F59E0B?style=for-the-badge" /></a>
-  <img alt="License" src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" />
-</p>
-
-<p align="center">
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-how-it-works">How It Works</a> •
-  <a href="#-project-structure">Project Structure</a> •
-  <a href="#%EF%B8%8F-configuration">Configuration</a> •
-  <a href="#-scripts">Scripts</a> •
-  <a href="#-tech-stack">Tech Stack</a>
-</p>
-
----
-
-## 🌟 Overview
+## Overview
 
 **Nexa** is an autonomous API bridge built for the [Agents on Stellar](https://stellar.org) hackathon. It demonstrates **chain abstraction** by using Stellar as a universal payment rail for decentralized AI services powered by the GenLayer blockchain.
 
-The concept is simple but powerful: **any AI agent or human user can pay USDC or XLM on Stellar Testnet and receive a fully consensus-verified, onchain resume audit** — no API keys, no subscriptions, just a single Soroban transaction. **USDC payments are fee-sponsored, meaning users pay zero XLM gas.**
+<img width="1524" height="762" alt="09 04 2026_14 12 47_REC" src="https://github.com/user-attachments/assets/20aaa197-6cfe-42ba-8121-91a3429b4cfe" />
+
+
+The concept is simple but powerful: **any AI agent or human user can pay USDC or XLM on Stellar Testnet and receive a fully consensus-verified, onchain resume audit** - no API keys, no subscriptions, just a single Soroban transaction. **USDC payments are fee-sponsored, meaning users pay zero XLM gas.**
 
 ### What Makes Nexa Unique
 
 | Feature | Description |
 |---|---|
-| 🤖 **Agent-Native** | Designed for AI agents. The MPP (Machine Payments Protocol) enables programmatic, wallet-to-wallet payments via HTTP `402 Payment Required`. |
-| 🔗 **Chain Abstraction** | Users interact only with Stellar (via Freighter wallet). The GenLayer AI audit runs invisibly behind the bridge. |
-| 🧠 **Decentralized AI Consensus** | Five independent AI validators on GenLayer's StudioNet analyze each resume using the Equivalence Principle — not one AI model, but a consensus of many. |
-| 🛡️ **Triple-Verified** | Every audit produces three on-chain proofs: Stellar USDC payment, Stellar SHA-256 attestation, and GenLayer consensus transaction. |
-| ⛽ **Zero Gas USDC** | The Nexa Bridge sponsors XLM network fees for USDC payments. Agents pay only the dollar amount, with zero gas friction. |
-| 💳 **Multi-Currency** | Supports both USDC (via Soroban SAC) and native XLM payments, providing maximum flexibility for the Stellar ecosystem. |
-| 🛡️ **Trustline Pre-flight** | Intelligent UI detects missing USDC trustlines before payment, guiding users to prepare their wallets or switch to XLM. |
-| 🔏 **On-Chain Attestation** | Audit results are hashed (SHA-256) and anchored on Stellar via `Memo.hash`, creating an immutable, independently verifiable proof tying each payment to its audit outcome. |
+|  **Agent-Native** | Designed for AI agents. The MPP (Machine Payments Protocol) enables programmatic, wallet-to-wallet payments via HTTP `402 Payment Required`. |
+|  **Chain Abstraction** | Users interact only with Stellar (via Freighter wallet). The GenLayer AI audit runs invisibly behind the bridge. |
+|  **Decentralized AI Consensus** | Five independent AI validators on GenLayer's StudioNet analyze each resume using the Equivalence Principle - not one AI model, but a consensus of many. |
+|  **Triple-Verified** | Every audit produces three onchain proofs: Stellar USDC payment, Stellar SHA-256 attestation, and GenLayer consensus transaction. |
+|  **Zero Gas USDC** | The Nexa Bridge sponsors XLM network fees for USDC payments. Agents pay only the dollar amount, with zero gas friction. |
+|  **Multi-Currency** | Supports both USDC (via Soroban SAC) and native XLM payments, providing maximum flexibility for the Stellar ecosystem. |
+|  **Trustline Pre-flight** | Intelligent UI detects missing USDC trustlines before payment, guiding users to prepare their wallets or switch to XLM. |
+|  **OnChain Attestation** | Audit results are hashed (SHA-256) and anchored on Stellar via `Memo.hash`, creating an immutable, independently verifiable proof tying each payment to its audit outcome. |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -131,12 +107,12 @@ Open **http://localhost:8080** in your browser.
 4. Click **Run Decentralized AI Audit**
 5. Sign the 1 USDC payment in Freighter
 6. Wait for GenLayer consensus (~30-60s)
-7. View your onchain audit results with **On-Chain Verification** panel! 🎉
+7. View your onchain audit results with **OnChain Verification** panel! 
 8. Click any verification link to independently verify on [Stellar Expert](https://stellar.expert) or [GenLayer Explorer](https://explorer-studio.genlayer.com)
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -189,7 +165,7 @@ sequenceDiagram
 
 ---
 
-## 🔑 How It Works
+## How It Works
 
 ### The MPP (Machine Payments Protocol) Handshake
 
@@ -197,16 +173,16 @@ Nexa implements [Stellar's MPP specification](https://paymentauth.org) for agent
 
 **Step-by-step:**
 
-1. **Initial Request** — The client sends a `POST /api/audit` without authentication.
-2. **402 Challenge** — The server responds with `402` and a `WWW-Authenticate: Payment ...` header containing the challenge (amount, currency, recipient).
-3. **Build Transaction** — The client builds a Soroban SAC `transfer` invocation for 1 USDC.
-4. **Simulate & Prepare** — The transaction is simulated on Soroban RPC to attach resource metadata.
-5. **Sign** — The user signs the prepared transaction via Freighter wallet.
-6. **Submit Credential** — The signed XDR is wrapped in an MPP credential (`Authorization: Payment <base64url>`) and sent back.
-7. **Verify & Settle** — The server verifies the Soroban invocation. For USDC payments, the server **sponsors the network fee** using its own account as a fee-payer, ensuring the user pays zero gas.
-8. **Execute Audit** — With payment confirmed, the server submits the audit job to GenLayer and waits for consensus.
-9. **Anchor Attestation** — After consensus, the server computes `SHA-256(screeningId | verdict | score | wallet)` and anchors it on Stellar as a `Memo.hash` transaction, creating an immutable on-chain proof.
-10. **Return Proofs** — The response includes the Stellar payment tx hash, the Stellar attestation tx hash, the GenLayer consensus tx hash, and the raw attestation digest.
+1. **Initial Request** - The client sends a `POST /api/audit` without authentication.
+2. **402 Challenge** - The server responds with `402` and a `WWW-Authenticate: Payment ...` header containing the challenge (amount, currency, recipient).
+3. **Build Transaction** - The client builds a Soroban SAC `transfer` invocation for 1 USDC.
+4. **Simulate & Prepare** - The transaction is simulated on Soroban RPC to attach resource metadata.
+5. **Sign** - The user signs the prepared transaction via Freighter wallet.
+6. **Submit Credential** - The signed XDR is wrapped in an MPP credential (`Authorization: Payment <base64url>`) and sent back.
+7. **Verify & Settle** - The server verifies the Soroban invocation. For USDC payments, the server **sponsors the network fee** using its own account as a fee-payer, ensuring the user pays zero gas.
+8. **Execute Audit** - With payment confirmed, the server submits the audit job to GenLayer and waits for consensus.
+9. **Anchor Attestation** - After consensus, the server computes `SHA-256(screeningId | verdict | score | wallet)` and anchors it on Stellar as a `Memo.hash` transaction, creating an immutable onchain proof.
+10. **Return Proofs** - The response includes the Stellar payment tx hash, the Stellar attestation tx hash, the GenLayer consensus tx hash, and the raw attestation digest.
 
 ### GenLayer AI Consensus
 
@@ -230,7 +206,7 @@ The bridge submits audit requests to a [GenLayer Intelligent Contract](https://g
 - `stellarAttestationHash` — Stellar tx hash of the on-chain attestation
 - `attestationDigest` — Raw SHA-256 hex digest anchored in Memo.hash
 
-### On-Chain Attestation
+### OnChain Attestation
 
 After every successful audit, the bridge anchors a cryptographic proof on Stellar:
 
@@ -241,21 +217,21 @@ SHA-256( "nexa:audit:{screeningId}|{verdict}|{matchScore}|{walletAddress}" )
 This digest is submitted as a `Memo.hash` on a self-payment transaction (0.0000001 XLM). The result is a verifiable, immutable link between the Stellar payment and the AI audit outcome — visible to anyone on [Stellar Expert](https://stellar.expert/explorer/testnet).
 
 **Why this matters:**
-- ✅ **Verifiable** — Anyone can recompute the SHA-256 from the audit data and verify it matches the Memo.hash on Stellar
-- ✅ **Immutable** — Once anchored, the attestation cannot be altered or deleted
-- ✅ **Cross-chain proof** — Ties the Stellar payment to the GenLayer consensus result
+- **Verifiable** - Anyone can recompute the SHA-256 from the audit data and verify it matches the Memo.hash on Stellar
+- **Immutable** - Once anchored, the attestation cannot be altered or deleted
+- **Crosschain proof** - Ties the Stellar payment to the GenLayer consensus result
 
-The UI displays an **On-Chain Verification** panel with clickable links to all three on-chain proofs:
+The UI displays an **OnChain Verification** panel with clickable links to all three on-chain proofs:
 
 | Proof | Explorer | What it shows |
 |---|---|---|
-| ⭐ USDC Payment | Stellar Expert | Soroban SAC `transfer` of 1 USDC |
-| 🔗 Attestation | Stellar Expert | Self-payment with `Memo.hash` = SHA-256 digest |
-| ⚡ AI Consensus | GenLayer Explorer | 5-validator consensus finalization |
+| USDC Payment | Stellar Expert | Soroban SAC `transfer` of 1 USDC |
+| Attestation | Stellar Expert | Self-payment with `Memo.hash` = SHA-256 digest |
+| AI Consensus | GenLayer Explorer | 5-validator consensus finalization |
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 Nexa/
@@ -307,7 +283,7 @@ Nexa/
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -338,7 +314,7 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 
 ---
 
-## 📜 Scripts
+## Scripts
 
 ### Backend
 
@@ -370,7 +346,7 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 ### Backend
 | Technology | Purpose |
@@ -395,8 +371,8 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 ### Blockchains
 | Chain | Role |
 |---|---|
-| **Stellar Testnet** (Soroban) | Payment rail — USDC and XLM transfers via SAC contracts |
-| **GenLayer StudioNet** | AI execution layer — consensus-driven resume audits |
+| **Stellar Testnet** (Soroban) | Payment rail - USDC and XLM transfers via SAC contracts |
+| **GenLayer StudioNet** | AI execution layer - consensus-driven resume audits |
 
 ### Facilitator Compatibility
 | Service | Status |
@@ -406,19 +382,19 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 
 ---
 
-## 🔒 Security Considerations
+## Security Considerations
 
-- **HMAC-bound Challenges** — The MPP challenge ID is an HMAC-SHA256 over all challenge parameters, preventing tampering and replay attacks.
-- **Canonical JSON** — Credential serialization uses deterministic JSON canonicalization (`Json.canonicalize` from `ox`) to ensure byte-exact HMAC matching.
-- **DID Verification** — The `did:pkh:stellar:testnet:<pubkey>` credential source is verified against the transaction's `from` address to prevent hash-theft attacks.
-- **Soroban Simulation** — Transactions are simulated before settlement to verify transfer events match expected parameters.
-- **On-Chain Attestations** — Audit results are SHA-256 hashed and anchored on Stellar via `Memo.hash`, creating tamper-proof provenance linking payments to outcomes.
-- **Challenge Expiry** — MPP challenges expire after 5 minutes, preventing stale replay attacks.
-- **Secret Keys** — Never commit `.env` to version control. The `.gitignore` is pre-configured.
+- **HMAC-bound Challenges** - The MPP challenge ID is an HMAC-SHA256 over all challenge parameters, preventing tampering and replay attacks.
+- **Canonical JSON** - Credential serialization uses deterministic JSON canonicalization (`Json.canonicalize` from `ox`) to ensure byte-exact HMAC matching.
+- **DID Verification** - The `did:pkh:stellar:testnet:<pubkey>` credential source is verified against the transaction's `from` address to prevent hash-theft attacks.
+- **Soroban Simulation** - Transactions are simulated before settlement to verify transfer events match expected parameters.
+- **OnChain Attestations** - Audit results are SHA-256 hashed and anchored on Stellar via `Memo.hash`, creating tamper-proof provenance linking payments to outcomes.
+- **Challenge Expiry** - MPP challenges expire after 5 minutes, preventing stale replay attacks.
+- **Secret Keys** - Never commit `.env` to version control. The `.gitignore` is pre-configured.
 
 ---
 
-## 🗺 Roadmap
+## Roadmap
 
 - [x] MPP payment handshake with Freighter wallet
 - [x] Soroban SAC transfer integration
@@ -439,7 +415,7 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 
 ---
 
-## 🌐 Mainnet Production Deployment
+## Mainnet Production Deployment
 
 Nexa is **built on testnet but designed for mainnet**. Below is a production deployment guide.
 
@@ -456,12 +432,12 @@ Nexa is **built on testnet but designed for mainnet**. Below is a production dep
 
 ### Security Hardening for Production
 
-- **Rate Limiting** — Add `express-rate-limit` middleware (e.g., 10 audits/minute per IP) to prevent abuse.
-- **HMAC Secret Rotation** — Rotate the `STELLAR_SECRET_KEY` periodically and use environment-specific secrets.
-- **CORS Lockdown** — Restrict `cors()` origins to your production domain only.
-- **HTTPS Enforcement** — Deploy behind a reverse proxy (e.g., Nginx, Cloudflare) with TLS termination.
-- **Audit Logging** — Persist all transaction hashes, attestation digests, and audit results to a database for compliance.
-- **Input Validation** — Add schema validation (e.g., `zod`) for all request bodies to prevent injection attacks.
+- **Rate Limiting** - Add `express-rate-limit` middleware (e.g., 10 audits/minute per IP) to prevent abuse.
+- **HMAC Secret Rotation** - Rotate the `STELLAR_SECRET_KEY` periodically and use environment-specific secrets.
+- **CORS Lockdown** - Restrict `cors()` origins to your production domain only.
+- **HTTPS Enforcement** - Deploy behind a reverse proxy (e.g., Nginx, Cloudflare) with TLS termination.
+- **Audit Logging** - Persist all transaction hashes, attestation digests, and audit results to a database for compliance.
+- **Input Validation** - Add schema validation (e.g., `zod`) for all request bodies to prevent injection attacks.
 
 ### Operational Cost Estimate
 
@@ -476,14 +452,14 @@ Nexa is **built on testnet but designed for mainnet**. Below is a production dep
 
 ### Go-to-Market Strategy
 
-1. **Phase 1 — Testnet (Current)**: Open beta for developers and agents. Gather feedback.
-2. **Phase 2 — Mainnet Launch**: Deploy with real USDC. Target recruiting agencies and HR SaaS platforms.
-3. **Phase 3 — A2A Marketplace**: Open a registry where agents can discover Nexa as a paid tool.
-4. **Phase 4 — Enterprise SDK**: Ship a verification SDK so third-party DApps can verify Nexa audit receipts.
+1. **Phase 1 - Testnet (Current)**: Open beta for developers and agents. Gather feedback.
+2. **Phase 2 - Mainnet Launch**: Deploy with real USDC. Target recruiting agencies and HR SaaS platforms.
+3. **Phase 3 - A2A Marketplace**: Open a registry where agents can discover Nexa as a paid tool.
+4. **Phase 4 - Enterprise SDK**: Ship a verification SDK so third-party DApps can verify Nexa audit receipts.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -495,20 +471,16 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👤 Author
-
-**MrNetwork** — [@encrypt_wizard](https://x.com/encrypt_wizard)
-
-Built for the **Agents on Stellar** Hackathon 🚀
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-<p align="center">
-  <sub>Powered by <strong>Stellar</strong> · <strong>GenLayer</strong> · <strong>MPP</strong></sub>
-</p>
+## Author
+
+**MrNetwork** - [@encrypt_wizard](https://x.com/encrypt_wizard)
+
+Built for the **Agents on Stellar** Hackathon 
+
+
