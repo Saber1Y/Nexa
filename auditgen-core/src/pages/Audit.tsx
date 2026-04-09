@@ -49,8 +49,9 @@ const Audit = () => {
     setTxHash(null);
 
     try {
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3402";
       // Call the Nexa Bridge instead of direct GenLayer
-      const data = await fetchWithMpp("http://localhost:3402/api/audit", address || "", {
+      const data = await fetchWithMpp(`${apiUrl}/api/audit`, address || "", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -240,7 +241,8 @@ const Audit = () => {
                       setLoading(true);
                       setError(null);
                       try {
-                        const data = await fetchWithMpp("http://localhost:3402/api/audit", address || "", {
+                        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3402";
+                        const data = await fetchWithMpp(`${apiUrl}/api/audit`, address || "", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({

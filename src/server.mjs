@@ -348,20 +348,23 @@ app.post("/api/audit", mppGuard, async (req, res) => {
 
 // ─── Start Server ────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3402;
-const server = app.listen(PORT, () => {
-  console.log(`\n🛸 Nexa Bridge Server is live!`);
-  console.log(`   Endpoint: POST http://localhost:${PORT}/api/audit`);
-  console.log(`   Accepts : 1.00 USDC  or  10 XLM (Stellar Testnet)`);
-  console.log(`   Attestation: On-chain SHA-256 anchoring enabled`);
-  console.log(`   Facilitator: OpenZeppelin x402 compatible\n`);
-});
 
-// Keep process alive explicitly
-process.on('SIGINT', () => {
-    console.log('Stopping server...');
-    server.close();
-    process.exit(0);
-});
+// Standard export for Vercel / serverless
+export default app;
 
-// Add a keep-alive interval just in case the environment is aggressive
-setInterval(() => {}, 1000 * 60 * 60);
+// Only start the listener if run directly (local dev)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  const server = app.listen(PORT, () => {
+    console.log(`\n🛸 Nexa Bridge Server is live!`);
+    console.log(`   Endpoint: POST http://localhost:${PORT}/api/audit`);
+    console.log(`   Accepts : 1.00 USDC  or  10 XLM (Stellar Testnet)`);
+    console.log(`   Attestation: On-chain SHA-256 anchoring enabled`);
+    console.log(`   Facilitator: OpenZeppelin x402 compatible\n`);
+  });
+
+  process.on('SIGINT', () => {
+      console.log('Stopping server...');
+      server.close();
+      process.exit(0);
+  });
+}

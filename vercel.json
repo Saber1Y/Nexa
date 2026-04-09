@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "name": "nexa-ai-bridge",
+  "builds": [
+    {
+      "src": "api/index.mjs",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "auditgen-core/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.mjs"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/auditgen-core/$1"
+    }
+  ]
+}

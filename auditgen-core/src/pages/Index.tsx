@@ -27,7 +27,8 @@ const Index = () => {
     setTxHash(null);
 
     try {
-      const data = await fetchWithMpp("http://localhost:3402/api/audit", {
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3402";
+      const data = await fetchWithMpp(`${apiUrl}/api/audit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
