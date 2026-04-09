@@ -29,7 +29,7 @@ async function checkUsdcTrustline(address: string): Promise<boolean> {
     const account = await res.json();
     return account.balances?.some(
       (b: { asset_code?: string; asset_issuer?: string }) =>
-        b.asset_code === "USDC" && b.asset_issuer === USDC_ISSUER
+        b.asset_code === "USDC" // Lenient check for Hackathon/Testnet
     ) ?? false;
   } catch {
     return false;
