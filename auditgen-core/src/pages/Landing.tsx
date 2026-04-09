@@ -43,9 +43,6 @@ const Landing = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-8 items-center">
             {/* Left Column – Text & CTA */}
             <div className="md:pl-8 lg:pl-16 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest mb-6 animate-pulse">
-                <Zap className="w-3 h-3" /> Agents on Stellar Hackathon
-              </div>
               <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6 font-serif">
                 <span className="gradient-text glow-text">Autonomous AI</span>
                 <br />
