@@ -35,7 +35,7 @@ const bridgeKeypair = Keypair.fromSecret(process.env.STELLAR_SECRET_KEY);
 // overwrite each other in the internal handler map.
 const mppUsdc = Mppx.create({
   secretKey: process.env.STELLAR_SECRET_KEY,
-  realm: "Nexa Bridge (USDC)",
+  realm: "NexaUSDC",
   methods: [
     stellar.charge({
       recipient: process.env.STELLAR_PUBLIC_KEY,
@@ -51,7 +51,7 @@ const mppUsdc = Mppx.create({
 
 const mppXlm = Mppx.create({
   secretKey: process.env.STELLAR_SECRET_KEY,
-  realm: "Nexa Bridge (XLM)",
+  realm: "NexaXLM",
   methods: [
     stellar.charge({
       recipient: process.env.STELLAR_PUBLIC_KEY,
@@ -236,6 +236,54 @@ async function anchorAttestation(attestationDigest) {
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok", bridge: "Nexa" });
+});
+
+// ─── Waitlist (Email Collection) ─────────────────────────────────────────────
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const WAITLIST_FILE = process.env.VERCEL
+  ? "/tmp/waitlist.json"
+  : path.join(__dirname, "..", "waitlist.json");
+
+function loadWaitlist() {
+  try {
+    if (fs.existsSync(WAITLIST_FILE)) {
+      return JSON.parse(fs.readFileSync(WAITLIST_FILE, "utf-8"));
+    }
+  } catch { /* ignore */ }
+  return [];
+}
+
+function saveWaitlist(list) {
+  fs.writeFileSync(WAITLIST_FILE, JSON.stringify(list, null, 2));
+}
+
+app.post("/api/waitlist", (req, res) => {
+  const { email } = req.body || {};
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: "Please provide a valid email address." });
+  }
+
+  const waitlist = loadWaitlist();
+
+  // Check for duplicates
+  if (waitlist.some((entry) => entry.email === email)) {
+    return res.json({ success: true, message: "You're already on the waitlist!" });
+  }
+
+  waitlist.push({
+    email,
+    subscribedAt: new Date().toISOString(),
+  });
+
+  saveWaitlist(waitlist);
+  console.log(`📬 Waitlist signup: ${email} (total: ${waitlist.length})`);
+
+  res.json({ success: true, message: "You've been added to the waitlist!" });
 });
 
 app.post("/api/audit", mppGuard, async (req, res) => {
