@@ -5,7 +5,6 @@ import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/hooks/useWallet";
 import WalletModal from "@/components/WalletModal";
-import { DesignSwitcher } from "@/components/DesignSwitcher";
 import logo from "@/assets/logo.png";
 
 const Navbar = () => {
@@ -23,8 +22,6 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center gap-4">
-            <DesignSwitcher />
-
             <Button
               variant="ghost"
               size="icon"

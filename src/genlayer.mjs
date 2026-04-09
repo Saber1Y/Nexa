@@ -48,6 +48,21 @@ export async function waitForReceipt(client, hash) {
     throw new Error("The audit was finalized, but contract execution failed. Check the GenLayer Explorer for details.");
   }
 
+  // Handle Undetermined consensus — validators could not agree on equivalent results
+  const consensusResult = receipt?.consensus_data?.final?.consensus_result
+    || receipt?.consensus_data?.consensus_result
+    || receipt?.consensus_result;
+
+  if (consensusResult && String(consensusResult).toLowerCase() === "undetermined") {
+    const error = new Error(
+      "AI Consensus Undetermined — the 5 validators could not reach agreement on this audit. " +
+      "This can happen with ambiguous or edge-case inputs. Please refine your job details and try again."
+    );
+    error.code = "CONSENSUS_UNDETERMINED";
+    error.genLayerHash = hash;
+    throw error;
+  }
+
   return receipt;
 }
 

@@ -25,12 +25,14 @@ async function main() {
   });
 
   const url = "http://localhost:3402/api/audit";
-  const auditData = {
-    jobTitle: "Senior AI Engineer",
-    jobDescription: "Looking for experts in LLMs and agentic workflows.",
-    mustHaveSkills: "Python, PyTorch, LangChain, Stellar SDK",
-    resumeText: "Experienced AI researcher with a focus on autonomous agents and decentralised finance..."
-  };
+  /* 📂 Change these values to test different scenarios! */
+const auditData = {
+  jobTitle: "Stellar Developer", // Change to "React Developer", "Accountant", etc.
+  jobDescription: "Specializing in Soroban Smart Contracts.",
+  mustHaveSkills: "Rust, JavaScript, Stellar SDK, Horizon API",
+  resumeText: "I am a Rust expert with 5 years of experience in blockchain..."
+};
+
 
   console.log("🔍 Requesting resume audit from Nexa Bridge...");
 
@@ -46,8 +48,23 @@ async function main() {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Bridge Error (${response.status}): ${errorText}`);
+      const errorBody = await response.json().catch(() => ({ error: "Unknown error" }));
+      
+      // Handle Undetermined Consensus gracefully
+      if (response.status === 422 && errorBody.code === "CONSENSUS_UNDETERMINED") {
+        console.log("\n⚖️  AI Consensus: UNDETERMINED");
+        console.log("────────────────────────────────────────────────");
+        console.log("   The 5 AI validators could NOT reach agreement.");
+        console.log("   This happens when the input is ambiguous or an edge case.");
+        if (errorBody.genLayerHash) {
+          console.log(`\n🧠 GenLayer Tx: ${errorBody.genLayerHash}`);
+        }
+        console.log(`\n💡 Hint: ${errorBody.hint}`);
+        console.log("\n📝 Your USDC payment was still processed. Try again with clearer job details.");
+        return;
+      }
+
+      throw new Error(`Bridge Error (${response.status}): ${JSON.stringify(errorBody)}`);
     }
 
     const result = await response.json();
@@ -59,9 +76,17 @@ async function main() {
     
     if (result.results) {
       console.log("\n📊 AI Assessment:");
-      console.log(`   Match Score: ${result.results.match_score}/10`);
-      console.log(`   Verdict: ${result.results.verdict}`);
-      console.log(`   Summary: ${result.results.explanation}`);
+      console.log(`   Match Score: ${result.results.match_score}/100`);
+      console.log(`   Verdict:     ${result.results.verdict}`);
+      console.log(`   Seniority:   ${result.results.seniority}`);
+      console.log(`   Summary:     ${result.results.explanation}`);
+
+      console.log("\n🛡️  On-Chain Verification Proofs:");
+      console.log("────────────────────────────────────────────────");
+      console.log(`⭐ Stellar Payment:     ${result.results.stellarPaymentHash}`);
+      console.log(`🧠 GenLayer Consensus:  ${result.results.txHash}`);
+      console.log(`🔗 On-Chain Attestation: ${result.results.stellarAttestationHash}`);
+      console.log(`🔐 Attestation Digest:  ${result.results.attestationDigest}`);
     } else {
       console.log("\n⚠️ Results pending or not returned in full.");
     }

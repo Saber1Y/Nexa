@@ -76,9 +76,17 @@ async function mppGuard(req, res, next) {
 
   try {
     const authHeader = req.header("Authorization");
+    const source = req.header("Origin") ? "🌐 Frontend" : "🤖 Agent";
+    const timestamp = new Date().toLocaleTimeString();
 
     if (!authHeader || !authHeader.startsWith("Payment ")) {
       // ── No credential: issue merged 402 with both currencies ────────
+      console.log(`\n┌─── 📨 Incoming Request [${timestamp}] ───────────────────────`);
+      console.log(`│ Source:   ${source}`);
+      console.log(`│ Action:   POST /api/audit (no payment attached)`);
+      console.log(`│ Status:   Issuing 402 Payment Required challenge...`);
+      console.log(`└────────────────────────────────────────────────────────`);
+
       const [usdcResult, xlmResult] = await Promise.all([
         usdcHandler(webReq),
         xlmHandler(webReq),
@@ -100,30 +108,40 @@ async function mppGuard(req, res, next) {
       const contentType = usdcResult.challenge.headers.get("Content-Type");
       if (contentType) mergedHeaders.set("Content-Type", contentType);
 
-      console.log("📤 Returned 402 Challenge (USDC + XLM)");
+      console.log(`   💳 402 → Offered: 1.00 USDC  or  10.00 XLM`);
       mergedHeaders.forEach((value, key) => res.setHeader(key, value));
       return res.status(402).json(body);
     }
 
     // ── Credential present: dispatch to the correct handler ───────────
+    console.log(`\n┌─── 💰 Payment Credential Received [${timestamp}] ─────────`);
+    console.log(`│ Source:   ${source}`);
+    console.log(`│ Action:   Verifying Stellar payment...`);
+
     // Try USDC first, fall back to XLM
     let result;
+    let paymentCurrency = "USDC";
     try {
       result = await usdcHandler(webReq);
       if (result.status === 402) {
         // USDC rejected — try XLM
+        paymentCurrency = "XLM";
         result = await xlmHandler(webReq);
       }
     } catch {
+      paymentCurrency = "XLM";
       result = await xlmHandler(webReq);
     }
 
     if (result.status === 402) {
-      console.log("📤 Payment credential rejected");
+      console.log(`│ ❌ Payment credential REJECTED`);
+      console.log(`└────────────────────────────────────────────────────────`);
       const headers = result.challenge.headers;
       headers.forEach((value, key) => res.setHeader(key, value));
       return res.status(402).json(await result.challenge.json());
     }
+    console.log(`│ ✅ Payment VERIFIED (${paymentCurrency})`);
+    console.log(`└────────────────────────────────────────────────────────`);
 
     // ── Extract the Stellar tx hash from the receipt ────────────────
     // withReceipt() returns a Response with a Payment-Receipt header
@@ -206,16 +224,23 @@ app.get("/health", (req, res) => {
 });
 
 app.post("/api/audit", mppGuard, async (req, res) => {
+  const auditStart = Date.now();
   try {
     // Extract the Stellar payment tx hash from the MPP guard
     const stellarPaymentHash = req.stellarPaymentHash || null;
     const paymentAssetLabel = stellarPaymentHash ? "Stellar Payment" : "Payment";
 
-    console.log(`✅ ${paymentAssetLabel} verified (Stellar Tx: ${stellarPaymentHash}). Starting GenLayer audit...`);
-
     const { jobTitle, jobDescription, mustHaveSkills, resumeText } = req.body;
+
+    console.log(`\n╔══════════════════════════════════════════════════════════╗`);
+    console.log(`║  🛸 NEXA AUDIT PIPELINE                                  ║`);
+    console.log(`╚══════════════════════════════════════════════════════════╝`);
+    console.log(`   📋 Job Title:    ${jobTitle}`);
+    console.log(`   ⭐ Stellar Tx:   ${stellarPaymentHash || 'N/A'}`);
     
     const client = getGenLayerClient();
+
+    console.log(`\n   [1/4] 🚀 Submitting to GenLayer (5 AI Validators)...`);
     const hash = await submitScreening(client, {
       jobTitle,
       jobDescription: jobDescription || "",
@@ -223,20 +248,19 @@ app.post("/api/audit", mppGuard, async (req, res) => {
       resumeText,
       userWalletAddress: process.env.GENLAYER_ADDRESS || "0x0000000000000000000000000000000000000000"
     });
+    console.log(`         GenLayer Tx: ${hash}`);
 
-    console.log(`🚀 Audit submitted to GenLayer. Tx Hash: ${hash}`);
-    console.log("⏳ Waiting for consensus (this may take up to 60s)...");
-
+    console.log(`   [2/4] ⏳ Waiting for AI consensus...`);
     const receipt = await waitForReceipt(client, hash);
-    console.log("📋 Consensus reached. Finalizing results...");
     const screeningId = getScreeningIdFromReceipt(receipt);
-    const results = await getScreening(client, screeningId);
+    console.log(`         Consensus reached! Screening ID: ${screeningId}`);
 
-    console.log("📄 Audit Result Data (Successfully Mapped):");
-    console.dir(results, { depth: null });
+    console.log(`   [3/4] 📄 Fetching finalized results...`);
+    const results = await getScreening(client, screeningId);
+    console.log(`         Verdict: ${results.verdict} | Score: ${results.match_score}/100 | Seniority: ${results.seniority}`);
 
     // ── Anchor attestation on Stellar ──────────────────────────────────
-    console.log("🔏 Anchoring audit attestation on Stellar...");
+    console.log(`   [4/4] 🔏 Anchoring attestation on Stellar...`);
     const attestationDigest = computeAttestationHash({
       screeningId,
       verdict: results.verdict || "Unknown",
@@ -245,6 +269,7 @@ app.post("/api/audit", mppGuard, async (req, res) => {
     });
 
     const attestationHash = await anchorAttestation(attestationDigest);
+    console.log(`         Attestation Tx: ${attestationHash}`);
 
     // ── Build response with all on-chain references ────────────────────
     results.txHash = hash;                         // GenLayer consensus tx
@@ -253,9 +278,29 @@ app.post("/api/audit", mppGuard, async (req, res) => {
     results.attestationDigest = attestationDigest.toString("hex"); // The SHA-256 digest
     results.paymentAssetLabel = paymentAssetLabel; // Label for UI (USDC or XLM)
 
+    const elapsed = ((Date.now() - auditStart) / 1000).toFixed(1);
+    console.log(`\n   ✅ AUDIT COMPLETE in ${elapsed}s`);
+    console.log(`   ────────────────────────────────────────────────`);
+    console.log(`   ⭐ Payment:      ${stellarPaymentHash}`);
+    console.log(`   🧠 Consensus:    ${hash}`);
+    console.log(`   🔗 Attestation:  ${attestationHash}`);
+    console.log(`   📊 Result:       ${results.verdict} (${results.match_score}/100)`);
+    console.log(`   ────────────────────────────────────────────────\n`);
+
     res.json({ success: true, screeningId, results });
   } catch (error) {
     console.error("Audit Error:", error);
+
+    // Return a specific response for Undetermined consensus
+    if (error.code === "CONSENSUS_UNDETERMINED") {
+      return res.status(422).json({
+        error: error.message,
+        code: "CONSENSUS_UNDETERMINED",
+        genLayerHash: error.genLayerHash,
+        hint: "The 5 AI validators could not agree. Try with clearer job details or a more detailed resume."
+      });
+    }
+
     res.status(500).json({ error: error.message });
   }
 });

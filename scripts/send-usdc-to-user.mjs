@@ -14,7 +14,7 @@ async function main() {
 
   const pair = Keypair.fromSecret(secret);
   const server = new Horizon.Server(HORIZON_TESTNET);
-  const targetWallet = "GCMM53NM7FG6S353V7Z7DO7EHBDB7JRC47U4ADHOAJJWJWROFFWESQP6";
+  const targetWallet = process.argv[2] || "GCMM53NM7FG6S353V7Z7DO7EHBDB7JRC47U4ADHOAJJWJWROFFWESQP6";
 
   console.log(`Checking ${targetWallet}...`);
 
