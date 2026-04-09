@@ -32,9 +32,6 @@ const Docs = () => {
         <main className="container px-4 py-8 pt-24 max-w-5xl space-y-16 w-full">
           {/* Header */}
           <div className="space-y-4 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest">
-              <Code2 className="w-3 h-3" /> Technical Documentation v1.0
-            </div>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight font-serif">
               The <span className="gradient-text">Nexa</span> Protocol
             </h1>
