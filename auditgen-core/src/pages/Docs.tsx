@@ -179,8 +179,7 @@ const Docs = () => {
           {/* 4. Judge's Deep Dive & Roadmap */}
           <section className="bg-secondary/20 rounded-2xl p-8 md:p-12 space-y-10 border border-border/50">
             <div className="space-y-4">
-              <h2 className="text-3xl font-bold font-serif italic text-primary">For the Hackathon Judges</h2>
-              <p className="text-muted-foreground text-sm uppercase font-bold tracking-[0.2em]">Why Nexa is Production-Ready</p>
+              <h2 className="text-3xl lg:text-4xl font-bold font-serif gradient-text glow-text pb-2">Why Nexa is Production-Ready</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
