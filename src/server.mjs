@@ -118,22 +118,37 @@ async function mppGuard(req, res, next) {
     console.log(`│ Source:   ${source}`);
     console.log(`│ Action:   Verifying Stellar payment...`);
 
-    // Try USDC first, fall back to XLM
+    // Try finding a handler that accepts this credential
     let result;
-    let paymentCurrency = "USDC";
-    try {
-      result = await usdcHandler(webReq);
-      if (result.status === 402) {
-        // USDC rejected — try XLM
-        paymentCurrency = "XLM";
-        result = await xlmHandler(webReq);
+    let paymentCurrency = null;
+    
+    // First pass: Try USDC
+    const usdcAttempt = await usdcHandler(webReq);
+    if (usdcAttempt.status !== 402) {
+      result = usdcAttempt;
+      paymentCurrency = "USDC";
+    } else {
+      // If USDC failed, check if it was just "Payment Required" or a hard rejection
+      // We clone the response to avoid consuming the body prematurely
+      const usdcBody = await usdcAttempt.challenge.clone().json().catch(() => ({}));
+      if (usdcBody.title === "Invalid Challenge") {
+        console.log(`│ ℹ️  Credential invalid for USDC, trying XLM...`);
       }
-    } catch {
-      paymentCurrency = "XLM";
-      result = await xlmHandler(webReq);
+      
+      // try XLM
+      const xlmAttempt = await xlmHandler(webReq);
+      if (xlmAttempt.status !== 402) {
+        result = xlmAttempt;
+        paymentCurrency = "XLM";
+      } else {
+        // Both failed. Return the USDC 402 because it's our primary, 
+        // or the XLM one if that's what they tried to pay with.
+        const xlmBody = await xlmAttempt.challenge.clone().json().catch(() => ({}));
+        result = (xlmBody.title === "Invalid Challenge") ? xlmAttempt : usdcAttempt;
+      }
     }
 
-    if (result.status === 402) {
+    if (!paymentCurrency || result.status === 402) {
       console.log(`│ ❌ Payment credential REJECTED`);
       console.log(`└────────────────────────────────────────────────────────`);
       const headers = result.challenge.headers;

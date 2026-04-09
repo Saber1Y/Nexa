@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { Mppx } from "mppx/client";
 import { stellar } from "@stellar/mpp/charge/client";
+import { USDC_SAC_TESTNET } from "@stellar/mpp";
 
 async function main() {
   console.log("DEBUG: Script started");
@@ -14,7 +15,7 @@ async function main() {
     methods: [
       stellar.charge({
         secretKey: "SCB4Y7YWI4OEFKJKY4VVJ7VSPCMKBBDHQBZKNOIE36ZLSTH3HCTVSAX7", // Separate Demo Agent Wallet
-        // mode: 'pull' is default (sends signed XDR to the bridge for submission)
+        currency: USDC_SAC_TESTNET,
       }),
     ],
     // Event logger to see the autonomous magic in action
@@ -24,7 +25,8 @@ async function main() {
     }
   });
 
-  const url = "http://localhost:3402/api/audit";
+  // Pointing to your LIVE Vercel App
+  const url = "https://nexa-ai-bridge.vercel.app/api/audit";
   /* 📂 Change these values to test different scenarios! */
 const auditData = {
   jobTitle: "Stellar Developer", // Change to "React Developer", "Accountant", etc.
@@ -95,6 +97,11 @@ const auditData = {
 
   } catch (error) {
     console.error("\n❌ Agent Error:", error.message);
+    if (error.cause) {
+      console.error("   Cause:", error.cause);
+    } else {
+      console.error("   Full Error:", error);
+    }
   }
 }
 
