@@ -49,8 +49,8 @@ const Landing = () => {
                 <span className="text-foreground">Bridge</span>
               </h1>
 
-              <p className="text-lg md:text-xl text-muted-foreground max-w-lg mb-10 leading-relaxed mx-auto md:mx-0">
-                AI Agents need reliable, third-party validation to trust their own processes. Nexa provides the decentralized <span className="text-foreground font-semibold">Reasoning Layer</span> for the <span className="text-foreground font-semibold">Stellar</span> economy — powered by <span className="text-foreground font-semibold">GenLayer</span> consensus.
+              <p className="text-lg md:text-xl text-muted-foreground max-w-xl mb-10 leading-relaxed mx-auto md:mx-0">
+                The decentralized <span className="text-foreground font-semibold">Reasoning Layer</span> for <span className="text-foreground font-semibold">Stellar</span> Agents, powered by <span className="text-foreground font-semibold">GenLayer</span> consensus.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
