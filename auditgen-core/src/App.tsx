@@ -7,12 +7,13 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import { WalletProvider } from "@/hooks/useWallet";
 import Landing from "./pages/Landing";
 import Audit from "./pages/Audit";
+import Docs from "./pages/Docs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ThemeProvider defaultTheme="dark">
+  <ThemeProvider>
     <WalletProvider>
     <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -22,6 +23,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/audit" element={<Audit />} />
+              <Route path="/docs" element={<Docs />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

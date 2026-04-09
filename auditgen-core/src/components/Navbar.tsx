@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Moon, Sun, WalletCards, ChevronDown } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Moon, Sun, WalletCards, ChevronDown, Rocket, ShieldCheck, FileText, LayoutDashboard } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/hooks/useWallet";
@@ -11,6 +11,9 @@ const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
   const { address, isConnected } = useWallet();
   const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <>
@@ -20,6 +23,28 @@ const Navbar = () => {
             <img src={logo} alt="Nexa" className="w-9 h-9 rounded-lg object-contain" width={36} height={36} />
             <span className="text-lg font-bold gradient-text">Nexa Bridge</span>
           </Link>
+
+          {/* Global Navigation */}
+          <nav className="hidden md:flex items-center gap-8">
+            <Link 
+              to="/" 
+              className={`text-xs font-bold uppercase tracking-widest transition-all hover:text-primary ${isActive("/") ? "text-primary glow-text" : "text-muted-foreground"}`}
+            >
+              Home
+            </Link>
+            <Link 
+              to="/audit" 
+              className={`text-xs font-bold uppercase tracking-widest transition-all hover:text-primary ${isActive("/audit") ? "text-primary glow-text" : "text-muted-foreground"}`}
+            >
+               Audit
+            </Link>
+            <Link 
+              to="/docs" 
+              className={`text-xs font-bold uppercase tracking-widest transition-all hover:text-primary ${isActive("/docs") ? "text-primary glow-text" : "text-muted-foreground"}`}
+            >
+              Docs
+            </Link>
+          </nav>
 
           <div className="flex items-center gap-4">
             <Button
