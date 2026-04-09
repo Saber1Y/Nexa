@@ -35,7 +35,7 @@ const bridgeKeypair = Keypair.fromSecret(process.env.STELLAR_SECRET_KEY);
 // overwrite each other in the internal handler map.
 const mppUsdc = Mppx.create({
   secretKey: process.env.STELLAR_SECRET_KEY,
-  realm: "Nexa Bridge",
+  realm: "Nexa Bridge (USDC)",
   methods: [
     stellar.charge({
       recipient: process.env.STELLAR_PUBLIC_KEY,
@@ -51,7 +51,7 @@ const mppUsdc = Mppx.create({
 
 const mppXlm = Mppx.create({
   secretKey: process.env.STELLAR_SECRET_KEY,
-  realm: "Nexa Bridge",
+  realm: "Nexa Bridge (XLM)",
   methods: [
     stellar.charge({
       recipient: process.env.STELLAR_PUBLIC_KEY,
