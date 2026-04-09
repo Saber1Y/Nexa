@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Briefcase, FileSearch, Zap, Sparkles, ExternalLink, RotateCcw, ShieldCheck, CreditCard, Activity, Star, Link, Coins, Target, AlertTriangle, Fuel } from "lucide-react";
+import { Briefcase, FileSearch, Zap, Sparkles, ExternalLink, RotateCcw, ShieldCheck, CreditCard, Activity, Star, Link, Coins, Target, AlertTriangle, Fuel, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import ResumeInput from "@/components/ResumeInput";
@@ -8,6 +8,7 @@ import AuditResults from "@/components/AuditResults";
 import BulkAuditView from "@/components/BulkAuditView";
 import { useMpp } from "@/hooks/useMpp";
 import { useWallet } from "@/hooks/useWallet";
+import { generateCertificate } from "@/utils/generateCertificate";
 
 const Audit = () => {
   const [auditMode, setAuditMode] = useState<"single" | "bulk">("single");
@@ -426,7 +427,20 @@ const Audit = () => {
               )}
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-3">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => {
+                  if (results) {
+                    generateCertificate(results, jobTitle, txHash || undefined);
+                  }
+                }}
+                className="font-semibold"
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                Download Certificate
+              </Button>
               <Button
                 variant="outline"
                 size="lg"

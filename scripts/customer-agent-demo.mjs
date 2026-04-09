@@ -16,6 +16,7 @@ async function main() {
       stellar.charge({
         secretKey: "SCB4Y7YWI4OEFKJKY4VVJ7VSPCMKBBDHQBZKNOIE36ZLSTH3HCTVSAX7", // Separate Demo Agent Wallet
         currency: USDC_SAC_TESTNET,
+        realm: "NexaUSDC",
       }),
     ],
     // Event logger to see the autonomous magic in action

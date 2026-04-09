@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import LanguageMarquee from "@/components/LanguageMarquee";
 import RoadmapBento from "@/components/RoadmapBento";
+import BridgeAnalytics from "@/components/BridgeAnalytics";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -75,6 +76,13 @@ const Landing = () => {
 
         {/* Decorative grid */}
         <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--border)/0.03)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--border)/0.03)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
+      </section>
+
+      {/* Bridge Analytics */}
+      <section className="relative py-12 border-t border-border/30">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <BridgeAnalytics />
+        </div>
       </section>
 
       {/* Language Marquee */}

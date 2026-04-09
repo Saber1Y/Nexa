@@ -20,6 +20,7 @@ import {
   getScreeningIdFromReceipt, 
   getScreening 
 } from "./genlayer.mjs";
+import { saveLedgerEntry, loadLedger, findByHash, getStats } from "./auditLedger.mjs";
 
 const app = express();
 app.use(cors({ exposedHeaders: ['www-authenticate', 'WWW-Authenticate'] }));
@@ -286,6 +287,25 @@ app.post("/api/waitlist", (req, res) => {
   res.json({ success: true, message: "You've been added to the waitlist!" });
 });
 
+// ─── Audit History & Verification ────────────────────────────────────────────
+
+app.get("/api/audits", (req, res) => {
+  const ledger = loadLedger();
+  res.json({ audits: ledger.reverse(), total: ledger.length });
+});
+
+app.get("/api/stats", (req, res) => {
+  res.json(getStats());
+});
+
+app.get("/api/verify/:hash", (req, res) => {
+  const result = findByHash(req.params.hash);
+  if (!result) {
+    return res.status(404).json({ found: false, error: "No audit found for this hash." });
+  }
+  res.json({ found: true, audit: result });
+});
+
 app.post("/api/audit", mppGuard, async (req, res) => {
   const auditStart = Date.now();
   const useSSE = req.header("Accept")?.includes("text/event-stream");
@@ -369,6 +389,31 @@ app.post("/api/audit", mppGuard, async (req, res) => {
     results.paymentAssetLabel = paymentAssetLabel; // Label for UI (USDC or XLM)
 
     const elapsed = ((Date.now() - auditStart) / 1000).toFixed(1);
+
+    // ── Persist to audit ledger ────────────────────────────────────────
+    try {
+      saveLedgerEntry({
+        id: screeningId,
+        jobTitle,
+        verdict: results.verdict || "Unknown",
+        matchScore: results.match_score ?? 0,
+        seniority: results.seniority || "Unknown",
+        explanation: results.explanation || "",
+        matchedSkills: results.matched_skills || [],
+        missingSkills: results.missing_skills || [],
+        stellarPaymentHash,
+        stellarAttestationHash: attestationHash,
+        genLayerHash: hash,
+        attestationDigest: attestationDigest.toString("hex"),
+        paymentAsset: paymentAssetLabel?.includes("XLM") ? "XLM" : "USDC",
+        elapsedSeconds: parseFloat(elapsed),
+        completedAt: new Date().toISOString(),
+      });
+      console.log(`   📒 Audit saved to ledger`);
+    } catch (ledgerErr) {
+      console.error("⚠️ Failed to save to ledger (non-fatal):", ledgerErr.message);
+    }
+
     console.log(`\n   ✅ AUDIT COMPLETE in ${elapsed}s`);
     console.log(`   ────────────────────────────────────────────────`);
     console.log(`   ⭐ Payment:      ${stellarPaymentHash}`);

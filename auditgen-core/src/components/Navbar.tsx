@@ -43,6 +43,18 @@ const Navbar = () => {
                Audit
             </Link>
             <Link 
+              to="/history" 
+              className={`text-xs font-bold uppercase tracking-widest transition-all hover:text-primary ${isActive("/history") ? "text-primary glow-text" : "text-muted-foreground"}`}
+            >
+              History
+            </Link>
+            <Link 
+              to="/verify" 
+              className={`text-xs font-bold uppercase tracking-widest transition-all hover:text-primary ${isActive("/verify") ? "text-primary glow-text" : "text-muted-foreground"}`}
+            >
+              Verify
+            </Link>
+            <Link 
               to="/docs" 
               className={`text-xs font-bold uppercase tracking-widest transition-all hover:text-primary ${isActive("/docs") ? "text-primary glow-text" : "text-muted-foreground"}`}
             >
@@ -111,6 +123,20 @@ const Navbar = () => {
                 className={`text-sm font-bold uppercase tracking-widest transition-all ${isActive("/audit") ? "text-primary glow-text" : "text-muted-foreground"}`}
               >
                  Audit
+              </Link>
+              <Link 
+                to="/history" 
+                onClick={closeMenu}
+                className={`text-sm font-bold uppercase tracking-widest transition-all ${isActive("/history") ? "text-primary glow-text" : "text-muted-foreground"}`}
+              >
+                History
+              </Link>
+              <Link 
+                to="/verify" 
+                onClick={closeMenu}
+                className={`text-sm font-bold uppercase tracking-widest transition-all ${isActive("/verify") ? "text-primary glow-text" : "text-muted-foreground"}`}
+              >
+                Verify
               </Link>
               <Link 
                 to="/docs" 
