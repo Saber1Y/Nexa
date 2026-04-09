@@ -33,10 +33,10 @@ const Docs = () => {
           {/* Header */}
           <div className="space-y-4 text-center md:text-left">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight font-serif">
-              The <span className="gradient-text">Nexa</span> Protocol
+              <span className="gradient-text">Stellar-Powered</span> AI Bridge
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              A specialized bridge connecting the <span className="text-foreground font-semibold">Stellar</span> asset layer to the <span className="text-foreground font-semibold">GenLayer</span> reasoning layer for autonomous AI services.
+              Nexa turns <span className="text-foreground font-semibold">Stellar</span> into the autonomous payment infrastructure for AI agents. Pay with USDC or XLM, get decentralized AI consensus, and verify everything onchain — all anchored on the Stellar ledger.
             </p>
           </div>
 
@@ -63,7 +63,7 @@ const Docs = () => {
               </div>
               <div className="p-6 bg-secondary/30 border-t border-border/50">
                 <p className="text-sm text-muted-foreground leading-relaxed italic">
-                  Figure 1: The Nexa Bridge acts as an autonomous mediator. It uses the Machine Payments Protocol (MPP) to negotiate payments on Stellar and triggers decentralized AI consensus on GenLayer.
+                  Figure 1: Stellar serves as the autonomous payment and attestation layer. AI agents pay USDC/XLM via MPP, and all results are anchored back on the Stellar ledger via Memo.hash.
                 </p>
               </div>
             </div>
@@ -71,18 +71,18 @@ const Docs = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Target className="w-4 h-4 text-primary" /> The Reasoning Gap
+                  <Target className="w-4 h-4 text-primary" /> Stellar as the Payment Rail
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Modern AI agents excel at execution but lack a <strong>Decentralized Reasoning Layer</strong>. How does an agent know it actually performed a quality task? Nexa fills this gap by providing third-party, consensus-based validation for agentic activities.
+                  AI agents need <strong>programmable, low-cost, instant payments</strong>. Stellar's Soroban smart contracts and the Machine Payments Protocol (MPP) make this possible — agents autonomously pay via HTTP `402 Payment Required`, settling in USDC or XLM with zero gas friction.
                 </p>
               </div>
               <div className="space-y-4">
                 <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-primary" /> Multi-Chain Abstraction
+                  <Globe className="w-4 h-4 text-primary" /> Stellar as the Proof Layer
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  High-frequency AI services shouldn't be limited by chain UX. Nexa abstracts the multi-chain complexity. Users pay in <strong>USDC (gasless) or XLM on Stellar</strong> (fast, low-cost) and receive results from <strong>GenLayer</strong> (powerful AI consensus).
+                  Every AI audit result is hashed (SHA-256) and <strong>attested back on Stellar</strong> via <code className="text-primary bg-primary/10 px-1 rounded">Memo.hash</code>. This creates a tamper-proof, independently verifiable link between payment and outcome — all on the Stellar ledger.
                 </p>
               </div>
             </div>
@@ -183,18 +183,18 @@ const Docs = () => {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <h4 className="text-base font-bold flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-green-500" /> Decentralized Trust
+                    <Lock className="w-4 h-4 text-green-500" /> Stellar-Native MPP
                   </h4>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Unlike centralized LLM APIs, Nexa ensures no single provider can bias an audit. Consensus is handled by a permissionless network of AI validators.
+                    Built on Stellar's official Machine Payments Protocol standard. The first real-world implementation enabling autonomous, programmatic agent-to-service payments via HTTP 402.
                   </p>
                 </div>
                 <div className="space-y-2">
                   <h4 className="text-base font-bold flex items-center gap-2">
-                    <Scale className="w-4 h-4 text-blue-400" /> Scalable Economics
+                    <Scale className="w-4 h-4 text-blue-400" /> Stellar Economics
                   </h4>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    By using Stellar's Asset rails, we support micropayments that are cost-prohibitive on other L1s. Fee-sponsored USDC and native XLM support means zero friction for users.
+                    Stellar's sub-cent fees and 5-second finality make it the ideal payments rail for high-frequency AI agents. Fee-sponsored USDC means zero gas friction for users.
                   </p>
                 </div>
               </div>
@@ -202,18 +202,18 @@ const Docs = () => {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <h4 className="text-base font-bold flex items-center gap-2">
-                    <Cpu className="w-4 h-4 text-primary" /> Stateless Scaling
+                    <Cpu className="w-4 h-4 text-primary" /> Onchain Verification
                   </h4>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    The Nexa Bridge is stateless, allowing for horizontal scaling across millions of agents. All state is maintained on the ledgers themselves.
+                    Every audit is triple-verified: Stellar payment, Stellar attestation (Memo.hash), and AI consensus. Anyone can independently verify results at <code className="text-primary bg-primary/10 px-1 rounded">/verify</code>.
                   </p>
                 </div>
                 <div className="space-y-2">
                   <h4 className="text-base font-bold flex items-center gap-2">
-                    <Rocket className="w-4 h-4 text-amber-500" /> The Road to Publicnet
+                    <Rocket className="w-4 h-4 text-amber-500" /> Mainnet-Ready
                   </h4>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Our architecture is publicnet-ready. Migrating requires only updating RPC endpoints and contract addresses—zero protocol changes needed.
+                    Built on Stellar Testnet but designed for Mainnet. Migrating requires only updating RPC endpoints and contract addresses — zero protocol changes.
                   </p>
                 </div>
               </div>

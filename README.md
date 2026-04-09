@@ -1,26 +1,29 @@
 
+# Nexa — Autonomous AI Payment Bridge on Stellar
 
 ## Overview
 
-[**Nexa**](https://nexa-ai-bridge.vercel.app/) is an autonomous API bridge built for the [Agents on Stellar](https://stellar.org) hackathon. It demonstrates **chain abstraction** by using Stellar as a universal payment rail for decentralized AI services powered by the GenLayer blockchain.
+[**Nexa**](https://nexa-ai-bridge.vercel.app/) demonstrates how **Stellar becomes the autonomous payment infrastructure for the AI agent economy**. Built for the [Agents on Stellar](https://stellar.org) hackathon, Nexa uses the **Machine Payments Protocol (MPP)** to let AI agents autonomously pay USDC or XLM on Stellar to access decentralized AI reasoning — no human intervention, no API keys, no subscriptions.
 
 <img width="1524" height="762" alt="09 04 2026_14 12 47_REC" src="https://github.com/user-attachments/assets/20aaa197-6cfe-42ba-8121-91a3429b4cfe" />
 
+The concept: **an AI agent sends an HTTP request, Stellar handles the payment, and the results are attested back on Stellar.** The entire lifecycle — payment, execution, and proof — is anchored on the Stellar ledger.
 
-The concept is simple but powerful: **any AI agent or human user can pay USDC or XLM on Stellar Testnet and receive a fully consensus-verified, onchain resume audit** - no API keys, no subscriptions, just a single Soroban transaction. **USDC payments are fee-sponsored, meaning users pay zero XLM gas.**
+### Stellar-Native Features
 
-### What Makes Nexa Unique
-
-| Feature | Description |
+| Feature | Stellar Integration |
 |---|---|
-|  **Agent-Native** | Designed for AI agents. The MPP (Machine Payments Protocol) enables programmatic, wallet-to-wallet payments via HTTP `402 Payment Required`. |
-|  **Chain Abstraction** | Users interact only with Stellar (via Freighter wallet). The GenLayer AI audit runs invisibly behind the bridge. |
-|  **Decentralized AI Consensus** | Five independent AI validators on GenLayer's StudioNet analyze each resume using the Equivalence Principle - not one AI model, but a consensus of many. |
-|  **Triple-Verified** | Every audit produces three onchain proofs: Stellar USDC payment, Stellar SHA-256 attestation, and GenLayer consensus transaction. |
-|  **Zero Gas USDC** | The Nexa Bridge sponsors XLM network fees for USDC payments. Agents pay only the dollar amount, with zero gas friction. |
-|  **Multi-Currency** | Supports both USDC (via Soroban SAC) and native XLM payments, providing maximum flexibility for the Stellar ecosystem. |
-|  **Trustline Pre-flight** | Intelligent UI detects missing USDC trustlines before payment, guiding users to prepare their wallets or switch to XLM. |
-|  **OnChain Attestation** | Audit results are hashed (SHA-256) and anchored on Stellar via `Memo.hash`, creating an immutable, independently verifiable proof tying each payment to its audit outcome. |
+|  **Machine Payments Protocol (MPP)** | First real-world implementation of Stellar's `@stellar/mpp` standard for autonomous agent payments via HTTP `402 Payment Required`. |
+|  **Dual Currency (USDC + XLM)** | Supports both Soroban SAC USDC and native XLM payments — maximum flexibility within the Stellar ecosystem. |
+|  **Zero Gas USDC** | The bridge sponsors XLM network fees for USDC payments. Agents pay only the dollar amount, with zero gas friction. |
+|  **On-Chain Attestation** | Every audit result is SHA-256 hashed and anchored on Stellar via `Memo.hash`, creating an immutable, independently verifiable proof. |
+|  **Freighter Wallet** | Native Stellar wallet integration for seamless UX. |
+|  **Trustline Pre-flight** | Intelligent detection of missing USDC trustlines before payment, with one-click XLM fallback. |
+|  **Audit Verification** | Anyone can paste a Stellar attestation hash and independently verify any audit result at [`/verify`](https://nexa-ai-bridge.vercel.app/verify). |
+|  **Live Audit History** | Real-time feed of all audits with clickable Stellar Explorer links at [`/history`](https://nexa-ai-bridge.vercel.app/history). |
+|  **PDF Certificates** | Downloadable audit certificates with links to Stellar payment and attestation transactions. |
+|  **Bridge Analytics** | Live production stats (total volume, success rate, consensus time) on the landing page. |
+|  **Triple-Verified** | Every audit produces three onchain proofs: Stellar USDC payment, Stellar SHA-256 attestation, and AI consensus transaction. |
 
 ---
 
@@ -236,49 +239,44 @@ The UI displays an **OnChain Verification** panel with clickable links to all th
 ```
 Nexa/
 ├── src/                          # Backend (Bridge Server)
-│   ├── server.mjs                #   Express server, MPP middleware, on-chain attestation
-│   └── genlayer.mjs              #   GenLayer client, screening submission & result parsing
+│   ├── server.mjs                #   Express server, MPP middleware, attestation
+│   ├── genlayer.mjs              #   GenLayer client & result parsing
+│   └── auditLedger.mjs           #   Audit history persistence
 │
 ├── auditgen-core/                # Frontend (React + Vite + Tailwind)
 │   ├── src/
 │   │   ├── App.tsx               #   Root component with routing
 │   │   ├── pages/
-│   │   │   ├── Landing.tsx       #   Landing page with hero, features, roadmap
-│   │   │   ├── Audit.tsx         #   Main audit page (form + results)
+│   │   │   ├── Landing.tsx       #   Landing with analytics dashboard
+│   │   │   ├── Audit.tsx         #   Audit form + results + certificate
+│   │   │   ├── History.tsx       #   Live audit history feed
+│   │   │   ├── Verify.tsx        #   Onchain verification search
+│   │   │   ├── Docs.tsx          #   Protocol documentation
 │   │   │   └── NotFound.tsx      #   404 page
 │   │   ├── components/
-│   │   │   ├── Navbar.tsx        #   Navigation bar with wallet connect
-│   │   │   ├── WalletModal.tsx   #   Wallet connection modal (Freighter)
-│   │   │   ├── ResumeInput.tsx   #   Resume text/PDF input component
-│   │   │   ├── AuditResults.tsx  #   Audit results display card
-│   │   │   ├── ConsensusLoader.tsx   # Loading animation during consensus
-│   │   │   ├── ScoreRing.tsx     #   Circular score visualization
-│   │   │   ├── HeroAuditAnimation.tsx # Landing page hero animation
-│   │   │   ├── LanguageMarquee.tsx   # Scrolling language/tech marquee
-│   │   │   └── RoadmapBento.tsx  #   Bento-grid roadmap section
+│   │   │   ├── Navbar.tsx        #   Navigation (Home/Audit/History/Verify/Docs)
+│   │   │   ├── BridgeAnalytics.tsx # Live bridge stats with animated counters
+│   │   │   ├── BulkAuditView.tsx #   Bulk registry (coming soon + waitlist)
+│   │   │   ├── WalletModal.tsx   #   Freighter wallet connection
+│   │   │   ├── AuditResults.tsx  #   Audit results display
+│   │   │   ├── ConsensusLoader.tsx   # Consensus loading animation
+│   │   │   └── ScoreRing.tsx     #   Circular score visualization
 │   │   ├── hooks/
-│   │   │   ├── useMpp.ts        #   MPP payment handshake hook (core payment logic)
-│   │   │   ├── useWallet.tsx     #   Freighter wallet connection hook & context
-│   │   │   ├── use-theme.tsx     #   Light/dark theme toggle
-│   │   │   └── use-toast.ts     #   Toast notification hook
-│   │   └── lib/
-│   │       └── genlayer.ts      #   TypeScript types for audit results
-│   └── index.html               #   Entry HTML
+│   │   │   ├── useMpp.ts        #   MPP payment handshake (core Stellar logic)
+│   │   │   ├── useWallet.tsx     #   Freighter wallet context
+│   │   │   └── use-theme.tsx     #   Theme toggle
+│   │   └── utils/
+│   │       └── generateCertificate.ts # PDF certificate generator
+│   └── index.html
 │
 ├── scripts/                      # Utility Scripts
-│   ├── generate-wallet.mjs       #   Generate Stellar keypair
-│   ├── generate-genlayer-key.mjs #   Generate GenLayer private key
-│   ├── setup-usdc.mjs            #   Fund testnet account with USDC trustline
-│   ├── setup-agent.mjs           #   Setup an AI agent wallet
-│   ├── send-usdc-to-user.mjs     #   Send testnet USDC to a user
 │   ├── customer-agent-demo.mjs   #   Full agent-mode demo (no UI)
-│   ├── full-system-test.mjs      #   End-to-end integration test
-│   └── test-challenge.mjs        #   Test 402 challenge generation
+│   ├── setup-usdc.mjs            #   Fund testnet USDC trustline
+│   ├── setup-agent.mjs           #   Bootstrap agent wallet
+│   └── generate-wallet.mjs       #   Generate Stellar keypair
 │
 ├── .env.example                  # Environment template
-├── package.json                  # Backend dependencies & scripts
-└── docs/
-    └── banner.png                # README banner
+└── package.json                  # Dependencies & scripts
 ```
 
 ---
@@ -397,19 +395,19 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 ## Roadmap
 
 - [x] MPP payment handshake with Freighter wallet
-- [x] Soroban SAC transfer integration
-- [x] GenLayer AI consensus audits
-- [x] On-chain SHA-256 attestation anchoring on Stellar
-- [x] Triple-verified On-Chain Verification panel (Stellar payment + attestation + GenLayer)
-- [x] Stellar Explorer links for payment & attestation transactions
-- [x] Agent-to-agent autonomous demo (`customer-agent-demo.mjs`)
-- [x] Multi-currency support (USDC + XLM)
-- [x] OpenZeppelin x402 Facilitator compatibility
+- [x] Soroban SAC transfer integration (USDC + XLM)
+- [x] Multi-currency support with intelligent trustline detection
 - [x] Fee-sponsored USDC settlement (Zero Gas for users)
-- [x] USDC Trustline pre-flight detection
-- [x] Production-ready UI (Trust, Arbitration, and Scalability sections)
-- [x] Bulk Audit Registry UI (Coming Soon preview)
-- [ ] Batch consensus on GenLayer v2.0
+- [x] On-chain SHA-256 attestation anchoring on Stellar (`Memo.hash`)
+- [x] Triple-verified proof panel (Stellar payment + Stellar attestation + AI consensus)
+- [x] Agent-to-agent autonomous demo (`customer-agent-demo.mjs`)
+- [x] Audit Verification Page — verify any audit by Stellar/GenLayer hash
+- [x] Live Audit History dashboard with Stellar Explorer links
+- [x] Bridge Analytics dashboard with live production metrics
+- [x] Downloadable PDF Audit Certificates with onchain proof links
+- [x] Email waitlist for Bulk Registry
+- [x] OpenZeppelin x402 Facilitator compatibility
+- [ ] Batch consensus for bulk audits
 - [ ] Payment channels for high-frequency agents
 - [ ] Mainnet deployment
 
