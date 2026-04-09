@@ -114,7 +114,7 @@ const Docs = () => {
                   icon: CreditCard
                 },
                 {
-                  title: "3. On-Chain Verification",
+                  title: "3. Onchain Verification",
                   desc: "The Bridge verifies the payment on the Stellar Horizon API and acknowledges the transaction.",
                   icon: Zap
                 }
