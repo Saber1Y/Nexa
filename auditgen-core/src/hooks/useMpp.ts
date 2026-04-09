@@ -121,7 +121,7 @@ export function useMpp() {
             headers: {
               ...options.headers,
               Authorization: authHeader,
-              Accept: "application/json",
+              Accept: "text/event-stream",
             },
           });
 
@@ -131,7 +131,82 @@ export function useMpp() {
           }
         }
 
-        // ── Step 6: Process result ──────────────────────────────────────
+        // ── Step 6: Process result (SSE stream or JSON) ─────────────────
+        const contentType = response.headers.get("Content-Type") || "";
+
+        if (contentType.includes("text/event-stream") && response.body) {
+          // Stream mode — read SSE events for real-time progress
+          setStatus("🔗 Payment verified! Submitting to GenLayer...");
+
+          return await new Promise((resolve, reject) => {
+            const reader = response.body!.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+
+            function processEvents(text: string) {
+              buffer += text;
+              const events = buffer.split("\n\n");
+              buffer = events.pop() || ""; // Keep incomplete event in buffer
+
+              for (const block of events) {
+                const lines = block.split("\n");
+                let eventName = "";
+                let eventData = "";
+
+                for (const line of lines) {
+                  if (line.startsWith("event: ")) eventName = line.slice(7);
+                  if (line.startsWith("data: ")) eventData = line.slice(6);
+                }
+
+                if (!eventName || !eventData) continue;
+
+                try {
+                  const parsed = JSON.parse(eventData);
+
+                  switch (eventName) {
+                    case "submitted":
+                      // GenLayer tx hash available — show explorer link immediately
+                      if (parsed.genLayerHash) {
+                        setTxHash(parsed.genLayerHash);
+                        setStatus("🧠 AI Validators reaching consensus...");
+                      }
+                      break;
+                    case "status":
+                      setStatus(`⏳ ${parsed.message}`);
+                      break;
+                    case "complete":
+                      setStatus("✅ Complete!");
+                      setAvailableChallenges(null);
+                      if (parsed.results?.txHash) setTxHash(parsed.results.txHash);
+                      resolve(parsed);
+                      return;
+                    case "error":
+                      reject(new Error(parsed.error || parsed.hint || "Audit failed"));
+                      return;
+                  }
+                } catch {
+                  // Skip malformed events
+                }
+              }
+            }
+
+            function read() {
+              reader.read().then(({ done, value }) => {
+                if (done) {
+                  // Stream ended without a complete event
+                  if (buffer.trim()) processEvents("\n\n");
+                  return;
+                }
+                processEvents(decoder.decode(value, { stream: true }));
+                read();
+              }).catch(reject);
+            }
+
+            read();
+          });
+        }
+
+        // Non-streaming fallback (standard JSON response)
         const data = await response.json();
         if (data.success) {
           setStatus("✅ Complete!");

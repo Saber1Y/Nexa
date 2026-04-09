@@ -324,20 +324,7 @@ const Audit = () => {
         {/* Loading / Results */}
         {loading && (
           <div className="space-y-4">
-            <ConsensusLoader />
-            {txHash && (
-              <div className="text-center">
-                <a
-                  href={`https://explorer-studio.genlayer.com/transactions/${txHash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Track on GenLayer Explorer
-                </a>
-              </div>
-            )}
+            <ConsensusLoader genLayerHash={txHash || mppTxHash} statusMessage={status} />
           </div>
         )}
         {results && !loading && (

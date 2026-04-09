@@ -225,6 +225,15 @@ app.get("/health", (req, res) => {
 
 app.post("/api/audit", mppGuard, async (req, res) => {
   const auditStart = Date.now();
+  const useSSE = req.header("Accept")?.includes("text/event-stream");
+
+  // Helper to send SSE events (only when streaming)
+  function sendEvent(event, data) {
+    if (useSSE) {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    }
+  }
+
   try {
     // Extract the Stellar payment tx hash from the MPP guard
     const stellarPaymentHash = req.stellarPaymentHash || null;
@@ -240,6 +249,16 @@ app.post("/api/audit", mppGuard, async (req, res) => {
     
     const client = getGenLayerClient();
 
+    // ── If SSE, set up streaming headers ────────────────────────────────
+    if (useSSE) {
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      });
+      sendEvent("payment", { stellarPaymentHash, paymentAssetLabel });
+    }
+
     console.log(`\n   [1/4] 🚀 Submitting to GenLayer (5 AI Validators)...`);
     const hash = await submitScreening(client, {
       jobTitle,
@@ -250,10 +269,16 @@ app.post("/api/audit", mppGuard, async (req, res) => {
     });
     console.log(`         GenLayer Tx: ${hash}`);
 
+    // ── Send GenLayer hash immediately so frontend can show explorer link ──
+    sendEvent("submitted", { genLayerHash: hash });
+
     console.log(`   [2/4] ⏳ Waiting for AI consensus...`);
+    sendEvent("status", { phase: "consensus", message: "AI validators reaching consensus..." });
+
     const receipt = await waitForReceipt(client, hash);
     const screeningId = getScreeningIdFromReceipt(receipt);
     console.log(`         Consensus reached! Screening ID: ${screeningId}`);
+    sendEvent("status", { phase: "fetching", message: "Consensus reached! Fetching results..." });
 
     console.log(`   [3/4] 📄 Fetching finalized results...`);
     const results = await getScreening(client, screeningId);
@@ -261,6 +286,8 @@ app.post("/api/audit", mppGuard, async (req, res) => {
 
     // ── Anchor attestation on Stellar ──────────────────────────────────
     console.log(`   [4/4] 🔏 Anchoring attestation on Stellar...`);
+    sendEvent("status", { phase: "attestation", message: "Anchoring proof on Stellar..." });
+
     const attestationDigest = computeAttestationHash({
       screeningId,
       verdict: results.verdict || "Unknown",
@@ -287,20 +314,34 @@ app.post("/api/audit", mppGuard, async (req, res) => {
     console.log(`   📊 Result:       ${results.verdict} (${results.match_score}/100)`);
     console.log(`   ────────────────────────────────────────────────\n`);
 
-    res.json({ success: true, screeningId, results });
+    if (useSSE) {
+      sendEvent("complete", { success: true, screeningId, results });
+      res.end();
+    } else {
+      res.json({ success: true, screeningId, results });
+    }
   } catch (error) {
     console.error("Audit Error:", error);
 
     // Return a specific response for Undetermined consensus
     if (error.code === "CONSENSUS_UNDETERMINED") {
-      return res.status(422).json({
+      const errData = {
         error: error.message,
         code: "CONSENSUS_UNDETERMINED",
         genLayerHash: error.genLayerHash,
         hint: "The 5 AI validators could not agree. Try with clearer job details or a more detailed resume."
-      });
+      };
+      if (useSSE) {
+        sendEvent("error", errData);
+        return res.end();
+      }
+      return res.status(422).json(errData);
     }
 
+    if (useSSE) {
+      sendEvent("error", { error: error.message });
+      return res.end();
+    }
     res.status(500).json({ error: error.message });
   }
 });
