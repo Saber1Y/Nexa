@@ -38,7 +38,7 @@ const Landing = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-28 pb-20 md:pt-40 md:pb-32">
+      <section className="relative pt-28 pb-4 md:pt-40 md:pb-32">
         <div className="container mx-auto px-4 relative z-10 max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
             {/* Left Column – Text & CTA */}
