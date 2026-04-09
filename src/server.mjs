@@ -187,6 +187,7 @@ async function mppGuard(req, res, next) {
     }
 
     req.stellarPaymentHash = stellarPaymentHash;
+    req.paymentCurrency = paymentCurrency;
     next();
   } catch (error) {
     console.error("❌ MPP Guard Error:", error.message);
@@ -320,7 +321,8 @@ app.post("/api/audit", mppGuard, async (req, res) => {
   try {
     // Extract the Stellar payment tx hash from the MPP guard
     const stellarPaymentHash = req.stellarPaymentHash || null;
-    const paymentAssetLabel = stellarPaymentHash ? "Stellar Payment" : "Payment";
+    const paymentCurrency = req.paymentCurrency || "USDC";
+    const paymentAssetLabel = paymentCurrency;
 
     const { jobTitle, jobDescription, mustHaveSkills, resumeText } = req.body;
 
@@ -405,7 +407,7 @@ app.post("/api/audit", mppGuard, async (req, res) => {
         stellarAttestationHash: attestationHash,
         genLayerHash: hash,
         attestationDigest: attestationDigest.toString("hex"),
-        paymentAsset: paymentAssetLabel?.includes("XLM") ? "XLM" : "USDC",
+        paymentAsset: paymentCurrency,
         elapsedSeconds: parseFloat(elapsed),
         completedAt: new Date().toISOString(),
       });
