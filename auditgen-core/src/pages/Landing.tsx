@@ -50,7 +50,7 @@ const Landing = () => {
               </h1>
 
               <p className="text-lg md:text-xl text-muted-foreground max-w-xl mb-10 leading-relaxed mx-auto md:mx-0">
-                The decentralized <span className="text-foreground font-semibold">Reasoning Layer</span> for <span className="text-foreground font-semibold">Stellar</span> Agents, powered by <span className="text-foreground font-semibold">GenLayer</span> consensus.
+                The native AI Reasoning Layer for <span className="text-foreground font-semibold">Stellar Agents</span>, anchored by GenLayer consensus.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
