@@ -40,7 +40,7 @@ const Landing = () => {
       {/* Hero Section */}
       <section className="relative pt-28 pb-20 md:pt-40 md:pb-32">
         <div className="container mx-auto px-4 relative z-10 max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-8 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
             {/* Left Column – Text & CTA */}
             <div className="md:pl-8 lg:pl-16 text-center md:text-left">
               <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6 font-serif">
@@ -67,7 +67,7 @@ const Landing = () => {
             </div>
 
             {/* Right Column – Bridge Animation */}
-            <div className="h-[400px] md:h-[520px]">
+            <div className="h-[280px] sm:h-[350px] md:h-[520px]">
               <BridgeAnimation />
             </div>
           </div>
