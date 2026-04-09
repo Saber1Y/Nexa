@@ -195,16 +195,16 @@ The bridge submits audit requests to a [GenLayer Intelligent Contract](https://g
 - Results are finalized onchain with a unique `AUDIT-xxx` screening ID
 
 **Audit results include:**
-- `match_score` — 0-100 fit score
-- `verdict` — Strong Match / Partial Match / Weak Match
-- `seniority` — Junior / Mid-Level / Senior / Lead
-- `matched_skills` — Skills found in the resume
-- `missing_skills` — Required skills not found
-- `explanation` — Detailed AI analysis
-- `confidence` — Consensus confidence level
-- `stellarPaymentHash` — Stellar tx hash of the USDC payment
-- `stellarAttestationHash` — Stellar tx hash of the on-chain attestation
-- `attestationDigest` — Raw SHA-256 hex digest anchored in Memo.hash
+- `match_score` - 0-100 fit score
+- `verdict` - Strong Match / Partial Match / Weak Match
+- `seniority` - Junior / Mid-Level / Senior / Lead
+- `matched_skills` - Skills found in the resume
+- `missing_skills` - Required skills not found
+- `explanation` - Detailed AI analysis
+- `confidence` - Consensus confidence level
+- `stellarPaymentHash` - Stellar tx hash of the USDC payment
+- `stellarAttestationHash` - Stellar tx hash of the on-chain attestation
+- `attestationDigest` - Raw SHA-256 hex digest anchored in Memo.hash
 
 ### OnChain Attestation
 
@@ -290,7 +290,7 @@ Nexa/
 | Variable | Required | Description |
 |---|---|---|
 | `STELLAR_SECRET_KEY` | ✅ | Stellar secret key for the collection account (verifies & settles payments) |
-| `STELLAR_PUBLIC_KEY` | ✅ | Stellar public key — recipient of USDC payments |
+| `STELLAR_PUBLIC_KEY` | ✅ | Stellar public key - recipient of USDC payments |
 | `GENLAYER_PRIVATE_KEY` | ✅ | GenLayer private key for submitting audit transactions |
 | `GENLAYER_ADDRESS` | ✅ | GenLayer wallet address |
 | `GENLAYER_RPC_URL` | ✅ | GenLayer StudioNet RPC endpoint |
@@ -339,7 +339,7 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 
 | Script | Description |
 |---|---|
-| `scripts/customer-agent-demo.mjs` | End-to-end agent demo — pays and audits without UI |
+| `scripts/customer-agent-demo.mjs` | End-to-end agent demo - pays and audits without UI |
 | `scripts/full-system-test.mjs` | Full integration test suite |
 | `scripts/setup-usdc.mjs` | Create USDC trustline on testnet |
 | `scripts/setup-agent.mjs` | Bootstrap an agent wallet with funded USDC |
@@ -377,7 +377,7 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 ### Facilitator Compatibility
 | Service | Status |
 |---|---|
-| [OpenZeppelin x402 Facilitator](https://developers.stellar.org/docs/build/agentic-payments/x402/built-on-stellar) | ✅ Compatible — fee-sponsored settlement ready |
+| [OpenZeppelin x402 Facilitator](https://developers.stellar.org/docs/build/agentic-payments/x402/built-on-stellar) | ✅ Compatible - fee-sponsored settlement ready |
 | [Built on Stellar](https://channels.openzeppelin.com/x402/testnet) | ✅ Testnet & Mainnet endpoints supported |
 
 ---
@@ -479,8 +479,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author
 
-**Built by** - [MrNetwork](https://x.com/encrypt_wizard)
-
-Built for the **Agents on Stellar** Hackathon 
+**Built by** - [MrNetwork](https://x.com/encrypt_wizard), for the **Agents on Stellar** Hackathon 
 
 
