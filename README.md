@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Nexa** is an autonomous API bridge built for the [Agents on Stellar](https://stellar.org) hackathon. It demonstrates **chain abstraction** by using Stellar as a universal payment rail for decentralized AI services powered by the GenLayer blockchain.
+[**Nexa**](https://nexa-ai-bridge.vercel.app/) is an autonomous API bridge built for the [Agents on Stellar](https://stellar.org) hackathon. It demonstrates **chain abstraction** by using Stellar as a universal payment rail for decentralized AI services powered by the GenLayer blockchain.
 
 <img width="1524" height="762" alt="09 04 2026_14 12 47_REC" src="https://github.com/user-attachments/assets/20aaa197-6cfe-42ba-8121-91a3429b4cfe" />
 
@@ -479,7 +479,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author
 
-**MrNetwork** - [@encrypt_wizard](https://x.com/encrypt_wizard)
+**Built by** - [MrNetwork](https://x.com/encrypt_wizard)
 
 Built for the **Agents on Stellar** Hackathon 
 
