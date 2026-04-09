@@ -20,8 +20,16 @@
       "destination": "/api/index.mjs"
     },
     {
-      "source": "/(.*)",
+      "source": "/assets/(.*)",
+      "destination": "/auditgen-core/assets/$1"
+    },
+    {
+      "source": "/(favicon\\.ico|robots\\.txt|placeholder\\.svg)",
       "destination": "/auditgen-core/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/auditgen-core/index.html"
     }
   ]
 }
