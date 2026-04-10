@@ -294,6 +294,8 @@ Nexa/
 | `GENLAYER_RPC_URL` | ✅ | GenLayer StudioNet RPC endpoint |
 | `GENLAYER_CONTRACT_ADDRESS` | ✅ | Deployed Intelligent Contract address |
 | `PORT` | ❌ | Server port (default: `3402`) |
+| `SUPABASE_URL` | ✅ | Supabase project URL for persistent audit ledger |
+| `SUPABASE_ANON_KEY` | ✅ | Supabase anon/public key (read/insert) |
 
 ### Funding Testnet USDC
 

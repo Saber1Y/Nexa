@@ -290,17 +290,17 @@ app.post("/api/waitlist", (req, res) => {
 
 // ─── Audit History & Verification ────────────────────────────────────────────
 
-app.get("/api/audits", (req, res) => {
-  const ledger = loadLedger();
-  res.json({ audits: ledger.reverse(), total: ledger.length });
+app.get("/api/audits", async (req, res) => {
+  const ledger = await loadLedger();
+  res.json({ audits: ledger, total: ledger.length });
 });
 
-app.get("/api/stats", (req, res) => {
-  res.json(getStats());
+app.get("/api/stats", async (req, res) => {
+  res.json(await getStats());
 });
 
-app.get("/api/verify/:hash", (req, res) => {
-  const result = findByHash(req.params.hash);
+app.get("/api/verify/:hash", async (req, res) => {
+  const result = await findByHash(req.params.hash);
   if (!result) {
     return res.status(404).json({ found: false, error: "No audit found for this hash." });
   }
@@ -394,7 +394,7 @@ app.post("/api/audit", mppGuard, async (req, res) => {
 
     // ── Persist to audit ledger ────────────────────────────────────────
     try {
-      saveLedgerEntry({
+      await saveLedgerEntry({
         id: screeningId,
         jobTitle,
         verdict: results.verdict || "Unknown",
@@ -411,9 +411,8 @@ app.post("/api/audit", mppGuard, async (req, res) => {
         elapsedSeconds: parseFloat(elapsed),
         completedAt: new Date().toISOString(),
       });
-      console.log(`   📒 Audit saved to ledger`);
     } catch (ledgerErr) {
-      console.error("⚠️ Failed to save to ledger (non-fatal):", ledgerErr.message);
+      console.error("⚠️ Failed to save to Supabase (non-fatal):", ledgerErr.message);
     }
 
     console.log(`\n   ✅ AUDIT COMPLETE in ${elapsed}s`);
