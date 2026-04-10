@@ -14,8 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["'Plus Jakarta Sans'", "system-ui", "sans-serif"],
-        serif: ["Georgia", "'Times New Roman'", "serif"],
+        sans: ["'JetBrains Mono'", "'Fira Code'", "'Consolas'", "monospace"],
+        mono: ["'JetBrains Mono'", "'Fira Code'", "'Consolas'", "monospace"],
+        display: ["'Orbitron'", "'Share Tech Mono'", "monospace"],
+        label: ["'Share Tech Mono'", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -51,6 +53,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        neon: {
+          green: "#00ff88",
+          magenta: "#ff00ff",
+          cyan: "#00d4ff",
+          red: "#ff3366",
+        },
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
         info: "hsl(var(--info))",
@@ -67,8 +75,8 @@ export default {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 1px)",
+        sm: "calc(var(--radius) - 2px)",
       },
       keyframes: {
         "accordion-down": {

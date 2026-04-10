@@ -32,14 +32,7 @@ const Audit = () => {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { 
-    fetchWithMpp, 
-    isPaying, 
-    status, 
-    txHash: mppTxHash, 
-    availableChallenges, 
-    setAvailableChallenges 
-  } = useMpp();
+  const { fetchWithMpp, isPaying, status, txHash: mppTxHash, availableChallenges, setAvailableChallenges } = useMpp();
   const { address, isConnected, hasUsdcTrustline } = useWallet();
 
   const handleSubmit = useCallback(async () => {
@@ -48,29 +41,14 @@ const Audit = () => {
     setError(null);
     setResults(null);
     setTxHash(null);
-
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3402";
-      // Call the Nexa Bridge instead of direct GenLayer
       const data = await fetchWithMpp(`${apiUrl}/api/audit`, address || "", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jobTitle,
-          jobDescription,
-          mustHaveSkills,
-          resumeText,
-        }),
+        body: JSON.stringify({ jobTitle, jobDescription, mustHaveSkills, resumeText }),
       });
-
-      // If the hook detected multiple payment methods, it returns
-      // { paymentRequired: true } and populates availableChallenges.
-      // We stop loading so the currency selection UI can render.
-      if (data?.paymentRequired) {
-        setLoading(false);
-        return;
-      }
-
+      if (data?.paymentRequired) { setLoading(false); return; }
       if (data.success) {
         setResults(data.results);
         setTxHash(data.results.txHash || "Finalized on GenLayer");
@@ -86,43 +64,47 @@ const Audit = () => {
 
   const canSubmit = jobTitle.trim() && resumeText.trim() && !loading && !isPaying && isConnected && address;
 
+  const inputClass = "w-full bg-background border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-neon-green transition-all font-mono tracking-wide cyber-chamfer-sm";
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background circuit-bg">
       <Navbar />
       <main className="container mx-auto px-4 py-8 pt-24 max-w-5xl space-y-8">
         {/* Hero */}
         <div className="text-center space-y-4">
-          <h2 className="text-3xl md:text-5xl font-extrabold gradient-text glow-text font-serif">
+          <h2 className="text-3xl md:text-5xl font-black font-display uppercase tracking-wider gradient-text">
             Nexa AI Bridge
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-sm leading-relaxed">
-            Execute autonomous AI audits across chain rails. Pay with <span className="text-foreground font-semibold">USDC or XLM on Stellar</span> to trigger <span className="text-foreground font-semibold">Consensus on GenLayer</span>.
+          <p className="text-muted-foreground max-w-2xl mx-auto text-xs leading-relaxed tracking-wide">
+            <span style={{ color: "var(--neon-green)" }}>&gt;</span> Execute autonomous AI audits. Pay with <span className="text-foreground font-bold">USDC or XLM on Stellar</span> to trigger consensus on GenLayer.
           </p>
         </div>
 
-        {/* Audit Mode Switcher */}
+        {/* Mode Switcher */}
         <div className="flex justify-center mb-4">
-          <div className="bg-secondary/50 p-1 rounded-xl border border-border flex items-center gap-1 group">
+          <div className="bg-card border border-border p-1 flex items-center gap-1 cyber-chamfer-sm">
             <button
               onClick={() => setAuditMode("single")}
-              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-                auditMode === "single" 
-                  ? "bg-primary text-primary-foreground shadow-lg" 
+              className={`px-6 py-2 text-[10px] font-display font-bold uppercase tracking-[0.15em] transition-all cyber-chamfer-sm ${
+                auditMode === "single"
+                  ? ""
                   : "text-muted-foreground hover:text-foreground"
               }`}
+              style={auditMode === "single" ? { background: "var(--neon-green)", color: "#0a0a0f" } : undefined}
             >
               Single Candidate
             </button>
             <button
               onClick={() => setAuditMode("bulk")}
-              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
-                auditMode === "bulk" 
-                  ? "bg-primary text-primary-foreground shadow-lg" 
+              className={`px-6 py-2 text-[10px] font-display font-bold uppercase tracking-[0.15em] transition-all flex items-center gap-2 cyber-chamfer-sm ${
+                auditMode === "bulk"
+                  ? ""
                   : "text-muted-foreground hover:text-foreground"
               }`}
+              style={auditMode === "bulk" ? { background: "var(--neon-green)", color: "#0a0a0f" } : undefined}
             >
               Bulk Registry
-              <div className="px-1.5 py-0.5 rounded bg-primary-foreground/20 text-[8px] uppercase tracking-tighter">In Dev</div>
+              <span className="px-1.5 py-0.5 text-[7px] uppercase tracking-wider border" style={{ borderColor: auditMode === "bulk" ? "#0a0a0f" : "var(--neon-green)", color: auditMode === "bulk" ? "#0a0a0f" : "var(--neon-green)" }}>Dev</span>
             </button>
           </div>
         </div>
@@ -132,46 +114,30 @@ const Audit = () => {
         ) : (
           <>
             {/* Job Details */}
-            <div className="glass-card p-6 space-y-4">
-              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-primary" /> Job Details
+            <div className="cyber-card p-6 space-y-4">
+              <h3 className="text-xs font-display font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                <Briefcase className="w-4 h-4" style={{ color: "var(--neon-green)" }} /> Job Details
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Job Title *</label>
-                  <input
-                    className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    placeholder="e.g. Senior Frontend Engineer"
-                    value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                  />
+                  <label className="font-label text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-1 block">&gt; Job Title *</label>
+                  <input className={inputClass} placeholder="e.g. Senior Frontend Engineer" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} style={{ caretColor: "var(--neon-green)" }} />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Must-Have Skills</label>
-                  <input
-                    className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    placeholder="e.g. React, TypeScript, Node.js"
-                    value={mustHaveSkills}
-                    onChange={(e) => setMustHaveSkills(e.target.value)}
-                  />
+                  <label className="font-label text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-1 block">&gt; Must-Have Skills</label>
+                  <input className={inputClass} placeholder="e.g. React, TypeScript, Node.js" value={mustHaveSkills} onChange={(e) => setMustHaveSkills(e.target.value)} style={{ caretColor: "var(--neon-green)" }} />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Job Description</label>
-                <textarea
-                  className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-                  rows={3}
-                  placeholder="Paste the job description here..."
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                />
+                <label className="font-label text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-1 block">&gt; Job Description</label>
+                <textarea className={`${inputClass} resize-none`} rows={3} placeholder="Paste the job description here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} style={{ caretColor: "var(--neon-green)" }} />
               </div>
             </div>
 
             {/* Resume Input */}
             <div className="space-y-3">
-              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                <FileSearch className="w-4 h-4 text-primary" /> Resume / CV
+              <h3 className="text-xs font-display font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                <FileSearch className="w-4 h-4" style={{ color: "var(--neon-cyan)" }} /> Resume / CV
               </h3>
               <ResumeInput resumeText={resumeText} onResumeTextChange={setResumeText} />
             </div>
@@ -182,16 +148,19 @@ const Audit = () => {
                 size="lg"
                 disabled={!canSubmit}
                 onClick={handleSubmit}
-                className="gradient-primary text-primary-foreground font-semibold px-8 py-3 text-base hover:opacity-90 transition-opacity disabled:opacity-40"
+                className="font-display text-[10px] font-bold uppercase tracking-[0.15em] px-8 py-3 border-2 transition-all duration-150 hover:neon-glow-lg cyber-chamfer disabled:opacity-30"
+                style={{ borderColor: "var(--neon-green)", color: "#0a0a0f", background: "var(--neon-green)" }}
               >
                 <Sparkles className="w-5 h-5 mr-2" />
                 Run Decentralized AI Audit
               </Button>
-              <p className="text-xs text-muted-foreground italic flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" /> Agent Mode: Bridge will handle autonomous payments.
+              <p className="text-[9px] text-muted-foreground italic tracking-wide flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3" style={{ color: "var(--neon-green)" }} /> Agent Mode: Bridge handles autonomous payments.
               </p>
               {error && (
-                <p className="text-sm text-destructive font-medium bg-destructive/5 p-2 rounded border border-destructive/10">{error}</p>
+                <p className="text-xs p-2 border cyber-chamfer-sm" style={{ color: "var(--neon-red)", borderColor: "rgba(255,51,102,0.2)", background: "rgba(255,51,102,0.05)" }}>
+                  {error}
+                </p>
               )}
             </div>
           </>
@@ -199,28 +168,26 @@ const Audit = () => {
 
         {/* Trustline Warning */}
         {isConnected && hasUsdcTrustline === false && !availableChallenges && !results && (
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 animate-in fade-in duration-300">
+          <div className="flex items-center gap-3 p-4 border cyber-chamfer-sm animate-in fade-in duration-300" style={{ borderColor: "rgba(0,212,255,0.3)", background: "rgba(0,212,255,0.03)", color: "var(--neon-cyan)" }}>
             <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-            <div className="text-sm">
-              <span className="font-semibold">USDC Trustline Missing.</span>{" "}
+            <div className="text-xs tracking-wide">
+              <span className="font-bold">USDC Trustline Missing.</span>{" "}
               You can still pay with XLM, or{" "}
-              <a href="https://laboratory.stellar.org/#trust?network=test" target="_blank" rel="noopener noreferrer" className="font-bold underline hover:no-underline">
-                add trustline →
-              </a>
+              <a href="https://laboratory.stellar.org/#trust?network=test" target="_blank" rel="noopener noreferrer" className="font-bold underline hover:no-underline">add trustline →</a>
             </div>
           </div>
         )}
 
-        {/* Currency Selection UI */}
+        {/* Currency Selection */}
         {availableChallenges && (
-          <div className="glass-card p-6 space-y-4 border-primary animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="cyber-card p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ borderColor: "var(--neon-green)" }}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Coins className="w-6 h-6 text-primary" />
+              <div className="w-10 h-10 flex items-center justify-center border" style={{ borderColor: "var(--neon-green)", boxShadow: "0 0 6px rgba(0,255,136,0.15)" }}>
+                <Coins className="w-6 h-6" style={{ color: "var(--neon-green)" }} />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-foreground">Select Payment Method</h3>
-                <p className="text-sm text-muted-foreground">The Nexa Bridge requires a micro-payment via MPP.</p>
+                <h3 className="text-sm font-display font-bold uppercase tracking-wider">Select Payment</h3>
+                <p className="text-[10px] text-muted-foreground tracking-wide">MPP micro-payment required</p>
               </div>
             </div>
 
@@ -230,6 +197,7 @@ const Audit = () => {
                 const isUsdc = currency === "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
                 const assetName = isUsdc ? "USDC" : "XLM";
                 const humanAmount = (Number(amount) / 1e7).toFixed(2);
+                const neon = isUsdc ? "var(--neon-cyan)" : "var(--neon-green)";
 
                 return (
                   <button
@@ -243,12 +211,7 @@ const Audit = () => {
                         const data = await fetchWithMpp(`${apiUrl}/api/audit`, address || "", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            jobTitle,
-                            jobDescription,
-                            mustHaveSkills,
-                            resumeText,
-                          }),
+                          body: JSON.stringify({ jobTitle, jobDescription, mustHaveSkills, resumeText }),
                         }, challenge);
                         if (data?.success) {
                           setResults(data.results);
@@ -260,61 +223,59 @@ const Audit = () => {
                         setLoading(false);
                       }
                     }}
-                    className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border hover:border-primary hover:bg-primary/5 transition-all group text-left"
+                    className="flex items-center justify-between p-4 border transition-all group text-left cyber-chamfer-sm"
+                    style={{ borderColor: `${neon}30`, background: `${neon}05` }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isUsdc ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                        {isUsdc ? <div className="text-[10px] font-bold">U</div> : <Target className="w-4 h-4" />}
+                      <div className="w-8 h-8 flex items-center justify-center border" style={{ borderColor: neon, color: neon }}>
+                        {isUsdc ? <span className="text-[10px] font-display font-bold">U</span> : <Target className="w-4 h-4" />}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold text-foreground">{assetName}</p>
+                          <p className="text-xs font-display font-bold uppercase tracking-wider">{assetName}</p>
                           {isUsdc && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/30 text-[9px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 border text-[7px] font-bold uppercase tracking-wider" style={{ borderColor: "rgba(0,255,136,0.3)", color: "var(--neon-green)" }}>
                               <Fuel className="w-2.5 h-2.5" /> Zero Gas
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground">Stellar {isUsdc ? 'USDC SAC · Fee Sponsored' : 'Native Asset'}</p>
+                        <p className="text-[10px] text-muted-foreground tracking-wide">Stellar {isUsdc ? 'USDC SAC · Fee Sponsored' : 'Native Asset'}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-mono font-bold text-primary">{humanAmount}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Per Audit</p>
+                      <p className="text-sm font-display font-bold" style={{ color: neon }}>{humanAmount}</p>
+                      <p className="text-[8px] text-muted-foreground uppercase tracking-wider">Per Audit</p>
                     </div>
                   </button>
                 );
               })}
             </div>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full text-muted-foreground text-xs"
-              onClick={() => {
-                setAvailableChallenges(null);
-                setLoading(false);
-              }}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-muted-foreground text-[10px] uppercase tracking-wider"
+              onClick={() => { setAvailableChallenges(null); setLoading(false); }}
             >
-              Cancel Audit
+              Cancel
             </Button>
           </div>
         )}
 
         {/* MPP Handshake Monitor */}
         {(loading || isPaying) && (
-          <div className="glass-card p-4 space-y-3 border-primary/20 bg-primary/5 animate-pulse">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+          <div className="cyber-card p-4 space-y-3 animate-pulse" style={{ borderColor: "rgba(0,255,136,0.2)", background: "rgba(0,255,136,0.02)" }}>
+            <h4 className="text-[9px] font-display font-bold uppercase tracking-[0.2em] flex items-center gap-2" style={{ color: "var(--neon-green)" }}>
               <Activity className="w-3 h-3" /> Nexa Protocol Handshake
             </h4>
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Status:</span>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">&gt; Status:</span>
                 <span className="font-mono text-foreground">{status || "Connecting to Bridge..."}</span>
               </div>
               {isPaying && (
-                <div className="flex items-center gap-2 text-xs text-amber-500 font-medium">
-                  <CreditCard className="w-3 h-3" /> ACTION REQUIRED: PLEASE SIGN IN FREIGHTER
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--neon-cyan)" }}>
+                  <CreditCard className="w-3 h-3" /> ACTION REQUIRED: SIGN IN FREIGHTER
                 </div>
               )}
             </div>
@@ -331,97 +292,76 @@ const Audit = () => {
           <div className="space-y-6">
             <AuditResults data={results} />
 
-            {/* Onchain Verification Panel */}
-            <div className="glass-card p-5 space-y-4 border-primary/20">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+            {/* Onchain Verification */}
+            <div className="cyber-card p-5 space-y-4" style={{ borderColor: "rgba(0,255,136,0.15)" }}>
+              <h4 className="text-[9px] font-display font-bold uppercase tracking-[0.2em] flex items-center gap-2" style={{ color: "var(--neon-green)" }}>
                 <ShieldCheck className="w-4 h-4" /> Onchain Verification
               </h4>
-              <p className="text-xs text-muted-foreground">
-                Every audit is triple-verified across two blockchains. Click any link to verify independently.
+              <p className="text-[10px] text-muted-foreground tracking-wide">
+                &gt; Triple-verified across two blockchains. Click any link to verify.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Stellar Payment */}
                 {results.stellarPaymentHash ? (
-                  <a
-                    href={`https://stellar.expert/explorer/testnet/tx/${results.stellarPaymentHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/40 transition-all group"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
-                      <Star className="w-4 h-4 text-amber-500" />
+                  <a href={`https://stellar.expert/explorer/testnet/tx/${results.stellarPaymentHash}`} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 p-3 border transition-all group cyber-chamfer-sm" style={{ borderColor: "rgba(0,255,136,0.15)" }}>
+                    <div className="w-8 h-8 flex items-center justify-center border" style={{ borderColor: "rgba(0,255,136,0.2)" }}>
+                      <Star className="w-4 h-4" style={{ color: "var(--neon-green)" }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-foreground">{String(results.paymentAssetLabel || "Stellar Payment")}</p>
-                      <p className="text-[10px] text-muted-foreground font-mono truncate">
-                        {String(results.stellarPaymentHash).slice(0, 16)}…
-                      </p>
+                      <p className="text-[10px] font-display font-bold uppercase tracking-wider">{String(results.paymentAssetLabel || "Stellar Payment")}</p>
+                      <p className="text-[9px] text-muted-foreground font-mono truncate">{String(results.stellarPaymentHash).slice(0, 16)}…</p>
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground ml-auto shrink-0 group-hover:text-primary transition-colors" />
+                    <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto shrink-0" />
                   </a>
                 ) : (
-                  <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/50 border border-emerald-500/20">
-                    <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
-                      <Star className="w-4 h-4 text-amber-500" />
+                  <div className="flex items-center gap-2.5 p-3 border cyber-chamfer-sm" style={{ borderColor: "rgba(0,255,136,0.15)" }}>
+                    <div className="w-8 h-8 flex items-center justify-center border" style={{ borderColor: "rgba(0,255,136,0.2)" }}>
+                      <Star className="w-4 h-4" style={{ color: "var(--neon-green)" }} />
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-foreground">Stellar Payment</p>
-                      <p className="text-[10px] text-emerald-500 font-semibold">✓ Verified via MPP</p>
+                    <div>
+                      <p className="text-[10px] font-display font-bold uppercase tracking-wider">Stellar Payment</p>
+                      <p className="text-[9px] font-bold" style={{ color: "var(--neon-green)" }}>✓ Verified via MPP</p>
                     </div>
                   </div>
                 )}
 
-                {/* Stellar Attestation */}
+                {/* Attestation */}
                 {results.stellarAttestationHash && (
-                  <a
-                    href={`https://stellar.expert/explorer/testnet/tx/${results.stellarAttestationHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/40 transition-all group"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
-                      <Link className="w-4 h-4 text-emerald-500" />
+                  <a href={`https://stellar.expert/explorer/testnet/tx/${results.stellarAttestationHash}`} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 p-3 border transition-all group cyber-chamfer-sm" style={{ borderColor: "rgba(0,212,255,0.15)" }}>
+                    <div className="w-8 h-8 flex items-center justify-center border" style={{ borderColor: "rgba(0,212,255,0.2)" }}>
+                      <Link className="w-4 h-4" style={{ color: "var(--neon-cyan)" }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-foreground">Attestation</p>
-                      <p className="text-[10px] text-muted-foreground font-mono truncate">
-                        {String(results.stellarAttestationHash).slice(0, 16)}…
-                      </p>
+                      <p className="text-[10px] font-display font-bold uppercase tracking-wider">Attestation</p>
+                      <p className="text-[9px] text-muted-foreground font-mono truncate">{String(results.stellarAttestationHash).slice(0, 16)}…</p>
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground ml-auto shrink-0 group-hover:text-primary transition-colors" />
+                    <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto shrink-0" />
                   </a>
                 )}
 
-                {/* GenLayer Consensus */}
+                {/* GenLayer */}
                 {txHash && (
-                  <a
-                    href={`https://explorer-studio.genlayer.com/transactions/${txHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/40 transition-all group"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center shrink-0">
-                      <Zap className="w-4 h-4 text-violet-500" />
+                  <a href={`https://explorer-studio.genlayer.com/transactions/${txHash}`} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 p-3 border transition-all group cyber-chamfer-sm" style={{ borderColor: "rgba(255,0,255,0.15)" }}>
+                    <div className="w-8 h-8 flex items-center justify-center border" style={{ borderColor: "rgba(255,0,255,0.2)" }}>
+                      <Zap className="w-4 h-4" style={{ color: "var(--neon-magenta)" }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-foreground">AI Consensus</p>
-                      <p className="text-[10px] text-muted-foreground font-mono truncate">
-                        {txHash.slice(0, 16)}…
-                      </p>
+                      <p className="text-[10px] font-display font-bold uppercase tracking-wider">AI Consensus</p>
+                      <p className="text-[9px] text-muted-foreground font-mono truncate">{txHash.slice(0, 16)}…</p>
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground ml-auto shrink-0 group-hover:text-primary transition-colors" />
+                    <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto shrink-0" />
                   </a>
                 )}
               </div>
 
-              {/* Attestation Digest */}
               {results.attestationDigest && (
                 <div className="pt-2 border-t border-border/50">
-                  <p className="text-[10px] text-muted-foreground">
-                    <span className="font-semibold">Attestation Digest (SHA-256):</span>{" "}
-                    <code className="bg-secondary/70 px-1.5 py-0.5 rounded text-[10px] font-mono break-all">
-                      {String(results.attestationDigest)}
-                    </code>
+                  <p className="text-[9px] text-muted-foreground tracking-wide">
+                    <span className="font-bold">&gt; Attestation Digest:</span>{" "}
+                    <code className="bg-background px-1.5 py-0.5 text-[9px] font-mono break-all" style={{ color: "var(--neon-green)" }}>{String(results.attestationDigest)}</code>
                   </p>
                 </div>
               )}
@@ -429,34 +369,20 @@ const Audit = () => {
 
             <div className="flex justify-center gap-3">
               <Button
-                variant="outline"
                 size="lg"
-                onClick={() => {
-                  if (results) {
-                    generateCertificate(results, jobTitle, txHash || undefined);
-                  }
-                }}
-                className="font-semibold"
+                onClick={() => { if (results) generateCertificate(results, jobTitle, txHash || undefined); }}
+                className="font-display text-[10px] font-bold uppercase tracking-[0.15em] px-6 border-2 transition-all hover:neon-glow-cyan cyber-chamfer-sm"
+                style={{ borderColor: "var(--neon-cyan)", color: "var(--neon-cyan)", background: "transparent" }}
               >
-                <FileDown className="w-4 h-4 mr-2" />
-                Download Certificate
+                <FileDown className="w-4 h-4 mr-2" /> Download Certificate
               </Button>
               <Button
-                variant="outline"
                 size="lg"
-                onClick={() => {
-                  setJobTitle("");
-                  setJobDescription("");
-                  setMustHaveSkills("");
-                  setResumeText("");
-                  setResults(null);
-                  setTxHash(null);
-                  setError(null);
-                }}
-                className="font-semibold"
+                onClick={() => { setJobTitle(""); setJobDescription(""); setMustHaveSkills(""); setResumeText(""); setResults(null); setTxHash(null); setError(null); }}
+                className="font-display text-[10px] font-bold uppercase tracking-[0.15em] px-6 border-2 transition-all hover:neon-glow cyber-chamfer-sm"
+                style={{ borderColor: "var(--neon-green)", color: "var(--neon-green)", background: "transparent" }}
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                New Review
+                <RotateCcw className="w-4 h-4 mr-2" /> New Review
               </Button>
             </div>
           </div>
@@ -464,11 +390,9 @@ const Audit = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 py-8 mt-12">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-muted-foreground font-medium">
-          <div className="flex items-center gap-2">
-            Nexa Bridge · Settlement by Stellar · Audit by GenLayer
-          </div>
+      <footer className="border-t py-8 mt-12" style={{ borderColor: "rgba(0,255,136,0.1)" }}>
+        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-muted-foreground tracking-[0.15em] uppercase">
+          <div><span style={{ color: "var(--neon-green)", opacity: 0.5 }}>&gt;</span> Nexa Bridge · Settlement by Stellar · Audit by GenLayer</div>
           <div className="flex gap-4">
             <a href="https://stellar.org" target="_blank" className="hover:text-foreground">Stellar</a>
             <a href="https://genlayer.com" target="_blank" className="hover:text-foreground">GenLayer</a>

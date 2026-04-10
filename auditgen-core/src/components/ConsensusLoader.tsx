@@ -1,4 +1,4 @@
-import { Loader2, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 
 interface ConsensusLoaderProps {
   genLayerHash?: string | null;
@@ -8,41 +8,38 @@ interface ConsensusLoaderProps {
 const ConsensusLoader = ({ genLayerHash, statusMessage }: ConsensusLoaderProps) => {
   return (
     <div className="flex flex-col items-center gap-6 py-12">
+      {/* Spinning hexagonal indicator */}
       <div className="relative">
-        <div className="w-20 h-20 rounded-full border-4 border-primary/20 flex items-center justify-center animate-pulse-glow">
-          <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <div className="w-20 h-20 flex items-center justify-center animate-pulse-glow border-2" style={{ borderColor: "var(--neon-green)", boxShadow: "0 0 15px rgba(0,255,136,0.2)" }}>
+          <div className="w-8 h-8 border-2 animate-spin" style={{ borderColor: "var(--neon-green) transparent transparent transparent" }} />
         </div>
-        <div className="absolute -inset-2 rounded-full border border-primary/10 animate-ping" />
       </div>
       <div className="text-center space-y-2">
-        <h3 className="text-lg font-semibold text-foreground">AI Validators Reaching Consensus...</h3>
-        <p className="text-sm text-muted-foreground">Your resume is being audited onchain by decentralized AI nodes</p>
+        <h3 className="text-sm font-display font-bold uppercase tracking-wider">
+          AI Validators Reaching Consensus
+          <span className="animate-blink" style={{ color: "var(--neon-green)" }}>_</span>
+        </h3>
+        <p className="text-[10px] text-muted-foreground tracking-wide">&gt; Resume audited onchain by decentralized AI nodes</p>
         {statusMessage && (
-          <p className="text-xs font-mono text-primary/80 mt-1">{statusMessage}</p>
+          <p className="text-[10px] font-mono mt-1" style={{ color: "var(--neon-cyan)" }}>&gt; {statusMessage}</p>
         )}
       </div>
-      <div className="w-64 h-2 rounded-full bg-secondary overflow-hidden">
-        <div className="h-full rounded-full gradient-primary animate-shimmer" style={{ width: "70%" }} />
+      <div className="w-64 h-1 bg-border overflow-hidden">
+        <div className="h-full animate-shimmer" style={{ width: "70%", background: "linear-gradient(90deg, var(--neon-green), var(--neon-cyan))" }} />
       </div>
 
-      {/* GenLayer Explorer Link — appears as soon as tx hash is available */}
       {genLayerHash && (
         <a
           href={`https://explorer-studio.genlayer.com/transactions/${genLayerHash}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary/10 border border-primary/25 hover:bg-primary/20 hover:border-primary/40 transition-all group"
+          className="inline-flex items-center gap-2 px-5 py-2.5 border transition-all group cyber-chamfer-sm"
+          style={{ borderColor: "rgba(255,0,255,0.2)", background: "rgba(255,0,255,0.03)" }}
         >
-          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-            <ExternalLink className="w-3 h-3 text-primary" />
-          </div>
+          <ExternalLink className="w-3 h-3" style={{ color: "var(--neon-magenta)" }} />
           <div className="text-left">
-            <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-              View Consensus Progress
-            </p>
-            <p className="text-[10px] font-mono text-muted-foreground">
-              {genLayerHash.slice(0, 10)}...{genLayerHash.slice(-8)}
-            </p>
+            <p className="text-[10px] font-display font-bold uppercase tracking-wider group-hover:neon-text-magenta transition-all">View Consensus</p>
+            <p className="text-[9px] font-mono text-muted-foreground">{genLayerHash.slice(0, 10)}...{genLayerHash.slice(-8)}</p>
           </div>
         </a>
       )}

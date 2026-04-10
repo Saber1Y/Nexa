@@ -1,49 +1,35 @@
-interface ScoreRingProps {
-  score: number;
-  size?: number;
-}
-
-const ScoreRing = ({ score, size = 160 }: ScoreRingProps) => {
-  const strokeWidth = 10;
-  const radius = (size - strokeWidth) / 2;
-  const displayScore = score <= 10 ? score * 10 : score;
+const ScoreRing = ({ score }: { score: number }) => {
+  const radius = 42;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (displayScore / 100) * circumference;
+  const offset = circumference - (score / 100) * circumference;
 
-  const getColor = () => {
-    if (score >= 75) return "hsl(var(--success))";
-    if (score >= 50) return "hsl(var(--warning))";
-    return "hsl(var(--destructive))";
-  };
+  const color = score >= 70 ? "var(--neon-green)" : score >= 40 ? "var(--neon-cyan)" : "var(--neon-red)";
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
+    <div className="relative w-28 h-28 shrink-0">
+      <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+        {/* Background ring */}
+        <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--border))" strokeWidth="4" />
+        {/* Score ring */}
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx="50"
+          cy="50"
           r={radius}
           fill="none"
-          stroke="hsl(var(--border))"
-          strokeWidth={strokeWidth}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={getColor()}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
+          stroke={color}
+          strokeWidth="4"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
+          strokeLinecap="butt"
           className="transition-all duration-1000 ease-out"
-          style={{ filter: `drop-shadow(0 0 8px ${getColor()})` }}
+          style={{ filter: `drop-shadow(0 0 6px ${color})` }}
         />
       </svg>
-      <div className="absolute flex flex-col items-center">
-        <span className="text-4xl font-extrabold text-foreground">{displayScore}</span>
-        <span className="text-xs font-medium text-muted-foreground">/ 100</span>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-display font-black" style={{ color, textShadow: `0 0 10px ${color}60` }}>
+          {score}
+        </span>
+        <span className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground font-label">/100</span>
       </div>
     </div>
   );

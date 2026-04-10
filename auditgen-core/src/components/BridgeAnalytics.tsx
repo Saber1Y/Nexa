@@ -46,70 +46,39 @@ const BridgeAnalytics = () => {
   if (!stats || stats.totalAudits === 0) return null;
 
   const cards = [
-    {
-      label: "Total Audits",
-      value: stats.totalAudits,
-      suffix: "",
-      icon: <BarChart3 className="w-5 h-5" />,
-      color: "text-primary",
-      glow: "from-purple-500/20 to-blue-500/20",
-    },
-    {
-      label: "Success Rate",
-      value: stats.successRate,
-      suffix: "%",
-      icon: <TrendingUp className="w-5 h-5" />,
-      color: "text-emerald-400",
-      glow: "from-emerald-500/20 to-teal-500/20",
-    },
-    {
-      label: "Avg Score",
-      value: stats.avgScore,
-      suffix: "/100",
-      icon: <Zap className="w-5 h-5" />,
-      color: "text-amber-400",
-      glow: "from-amber-500/20 to-orange-500/20",
-    },
-    {
-      label: "Avg Consensus",
-      value: stats.avgTime,
-      suffix: "s",
-      icon: <Clock className="w-5 h-5" />,
-      color: "text-blue-400",
-      glow: "from-blue-500/20 to-cyan-500/20",
-    },
-    {
-      label: "Volume",
-      value: stats.totalUsdc + stats.totalXlm,
-      suffix: ` txns`,
-      icon: <DollarSign className="w-5 h-5" />,
-      color: "text-pink-400",
-      glow: "from-pink-500/20 to-rose-500/20",
-      extra: `${stats.totalUsdc} USDC · ${stats.totalXlm} XLM`,
-    },
+    { label: "Total Audits", value: stats.totalAudits, suffix: "", icon: <BarChart3 className="w-5 h-5" />, neon: "var(--neon-green)" },
+    { label: "Success Rate", value: stats.successRate, suffix: "%", icon: <TrendingUp className="w-5 h-5" />, neon: "var(--neon-green)" },
+    { label: "Avg Score", value: stats.avgScore, suffix: "/100", icon: <Zap className="w-5 h-5" />, neon: "var(--neon-cyan)" },
+    { label: "Avg Consensus", value: stats.avgTime, suffix: "s", icon: <Clock className="w-5 h-5" />, neon: "var(--neon-cyan)" },
+    { label: "Volume", value: stats.totalUsdc + stats.totalXlm, suffix: " txns", icon: <DollarSign className="w-5 h-5" />, neon: "var(--neon-magenta)", extra: `${stats.totalUsdc} USDC · ${stats.totalXlm} XLM` },
   ];
 
   return (
     <section className="w-full">
       <div className="text-center mb-6">
-        <h3 className="text-lg md:text-xl font-bold text-foreground font-serif">Bridge Analytics</h3>
-        <p className="text-xs text-muted-foreground mt-1">Live production metrics from the Nexa Bridge</p>
+        <h3 className="text-sm md:text-base font-display font-bold text-foreground uppercase tracking-wider">
+          Bridge Analytics
+        </h3>
+        <p className="font-label text-[9px] uppercase tracking-[0.2em] mt-1" style={{ color: "var(--neon-green)", opacity: 0.6 }}>
+          &gt; live production metrics
+        </p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {cards.map((card) => (
           <div
             key={card.label}
-            className={`glass-card p-4 text-center relative overflow-hidden group hover:border-primary/30 transition-all`}
+            className="cyber-card p-4 text-center group"
           >
-            <div className={`absolute inset-0 bg-gradient-to-br ${card.glow} opacity-0 group-hover:opacity-100 transition-opacity`} />
-            <div className="relative z-10">
-              <div className={`${card.color} mx-auto mb-2 opacity-60`}>{card.icon}</div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">{card.label}</p>
-              <p className={`text-2xl font-bold font-mono ${card.color}`}>
-                <AnimatedNumber value={card.value} suffix={card.suffix} />
-              </p>
-              {card.extra && <p className="text-[10px] text-muted-foreground mt-1">{card.extra}</p>}
+            <div className="mx-auto mb-2 opacity-50 group-hover:opacity-100 transition-opacity" style={{ color: card.neon }}>
+              {card.icon}
             </div>
+            <p className="font-label text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
+              {card.label}
+            </p>
+            <p className="text-xl font-display font-bold" style={{ color: card.neon, textShadow: `0 0 8px ${card.neon}40` }}>
+              <AnimatedNumber value={card.value} suffix={card.suffix} />
+            </p>
+            {card.extra && <p className="text-[9px] text-muted-foreground mt-1 tracking-wide">{card.extra}</p>}
           </div>
         ))}
       </div>

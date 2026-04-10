@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, ShieldCheck, ExternalLink, CheckCircle2, XCircle, AlertTriangle, Hash, Copy, Check, Globe, Loader2, Link2 } from "lucide-react";
+import { Search, ShieldCheck, ExternalLink, CheckCircle2, XCircle, AlertTriangle, Hash, Copy, Check, Globe, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import ScoreRing from "@/components/ScoreRing";
@@ -29,8 +29,7 @@ const Verify = () => {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
-  // Stellar Horizon live verification state
-  const [stellarVerification, setStellarVerification] = useState<{
+  const [sv, setSv] = useState<{
     loading: boolean;
     attestationTx: StellarTxData | null;
     paymentTx: StellarTxData | null;
@@ -44,40 +43,25 @@ const Verify = () => {
       const res = await fetch(`${HORIZON_URL}/transactions/${txHash}`);
       if (!res.ok) return null;
       return await res.json();
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   };
 
   const verifyStellar = async (audit: any) => {
-    setStellarVerification({ loading: true, attestationTx: null, paymentTx: null, memoHex: null, digestMatch: null, error: null });
-
+    setSv({ loading: true, attestationTx: null, paymentTx: null, memoHex: null, digestMatch: null, error: null });
     try {
       const [attestationTx, paymentTx] = await Promise.all([
         audit.stellarAttestationHash ? fetchStellarTx(audit.stellarAttestationHash) : null,
         audit.stellarPaymentHash ? fetchStellarTx(audit.stellarPaymentHash) : null,
       ]);
-
       let memoHex: string | null = null;
       let digestMatch: boolean | null = null;
-
       if (attestationTx?.memo && attestationTx?.memo_type === "hash") {
         memoHex = base64ToHex(attestationTx.memo);
-        if (audit.attestationDigest) {
-          digestMatch = memoHex === audit.attestationDigest;
-        }
+        if (audit.attestationDigest) digestMatch = memoHex === audit.attestationDigest;
       }
-
-      setStellarVerification({
-        loading: false,
-        attestationTx,
-        paymentTx,
-        memoHex,
-        digestMatch,
-        error: !attestationTx && !paymentTx ? "Could not fetch transactions from Stellar Horizon. The transactions may not have been confirmed yet." : null,
-      });
+      setSv({ loading: false, attestationTx, paymentTx, memoHex, digestMatch, error: !attestationTx && !paymentTx ? "Could not fetch from Stellar Horizon." : null });
     } catch {
-      setStellarVerification((prev) => ({ ...prev, loading: false, error: "Failed to connect to Stellar Horizon API." }));
+      setSv((p) => ({ ...p, loading: false, error: "Failed to connect to Stellar Horizon API." }));
     }
   };
 
@@ -86,22 +70,19 @@ const Verify = () => {
     setLoading(true);
     setError("");
     setResult(null);
-    setStellarVerification({ loading: false, attestationTx: null, paymentTx: null, memoHex: null, digestMatch: null, error: null });
-
+    setSv({ loading: false, attestationTx: null, paymentTx: null, memoHex: null, digestMatch: null, error: null });
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "";
       const res = await fetch(`${apiUrl}/api/verify/${encodeURIComponent(hash.trim())}`);
       const data = await res.json();
-
       if (!data.found) {
-        setError("No audit found for this hash. Make sure you're using a valid Stellar attestation, payment, or GenLayer consensus hash.");
+        setError("No audit found for this hash.");
       } else {
         setResult(data.audit);
-        // Automatically trigger live Stellar verification
         verifyStellar(data.audit);
       }
     } catch {
-      setError("Failed to connect to the bridge. Please try again.");
+      setError("Failed to connect to the bridge.");
     } finally {
       setLoading(false);
     }
@@ -115,70 +96,61 @@ const Verify = () => {
     }
   };
 
-  const verdictColor: Record<string, string> = {
-    Qualified: "text-emerald-400",
-    Maybe: "text-amber-400",
-    "Not Qualified": "text-red-400",
-  };
-
+  const verdictColor: Record<string, string> = { Qualified: "var(--neon-green)", Maybe: "var(--neon-cyan)", "Not Qualified": "var(--neon-red)" };
   const verdictIcon: Record<string, any> = {
-    Qualified: <CheckCircle2 className="w-5 h-5 text-emerald-400" />,
-    Maybe: <AlertTriangle className="w-5 h-5 text-amber-400" />,
-    "Not Qualified": <XCircle className="w-5 h-5 text-red-400" />,
+    Qualified: <CheckCircle2 className="w-5 h-5" style={{ color: "var(--neon-green)" }} />,
+    Maybe: <AlertTriangle className="w-5 h-5" style={{ color: "var(--neon-cyan)" }} />,
+    "Not Qualified": <XCircle className="w-5 h-5" style={{ color: "var(--neon-red)" }} />,
   };
-
-  const sv = stellarVerification;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background circuit-bg">
       <Navbar />
       <main className="container mx-auto px-4 py-8 pt-24 max-w-4xl space-y-8">
         {/* Hero */}
         <div className="text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 border text-[10px] font-bold uppercase tracking-[0.2em] cyber-chamfer-sm" style={{ borderColor: "var(--neon-green)", color: "var(--neon-green)", background: "rgba(0,255,136,0.05)" }}>
             <ShieldCheck className="w-3 h-3" /> Trustless Verification
           </div>
-          <h2 className="text-3xl md:text-5xl font-extrabold gradient-text glow-text font-serif">
-            Verify Any Audit
+          <h2 className="text-3xl md:text-5xl font-black font-display uppercase tracking-wider">
+            <span className="gradient-text">Verify Audit</span>
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto text-sm leading-relaxed">
-            Paste a <span className="text-foreground font-semibold">Stellar attestation hash</span>, <span className="text-foreground font-semibold">payment hash</span>, or <span className="text-foreground font-semibold">GenLayer consensus hash</span> to independently verify an audit result onchain via the <span className="text-primary font-semibold">Stellar Horizon API</span>.
+          <p className="text-muted-foreground max-w-xl mx-auto text-xs tracking-wide leading-relaxed">
+            <span style={{ color: "var(--neon-green)" }}>&gt;</span> Paste any Stellar or GenLayer hash. Results are cryptographically verified via the <span className="font-bold" style={{ color: "var(--neon-cyan)" }}>Stellar Horizon API</span>.
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="glass-card p-6">
+        {/* Search */}
+        <div className="cyber-card p-6">
           <div className="flex gap-3">
             <div className="relative flex-1">
-              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold" style={{ color: "var(--neon-green)" }}>&gt;</span>
               <input
                 type="text"
-                placeholder="Paste a Stellar or GenLayer transaction hash..."
+                placeholder="Paste tx hash..."
                 value={hash}
                 onChange={(e) => setHash(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleVerify()}
-                className="w-full pl-12 pr-4 py-4 rounded-xl bg-secondary/80 border border-border/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all font-mono"
+                className="w-full pl-10 pr-4 py-4 bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-neon-green transition-all font-mono tracking-wide cyber-chamfer-sm"
+                style={{ caretColor: "var(--neon-green)" }}
               />
             </div>
             <Button
               onClick={handleVerify}
               disabled={loading || !hash.trim()}
-              className="gradient-primary text-primary-foreground font-semibold px-8 rounded-xl"
+              className="font-display text-[10px] font-bold uppercase tracking-[0.15em] px-8 border-2 cyber-chamfer-sm"
+              style={{ borderColor: "var(--neon-green)", color: "#0a0a0f", background: "var(--neon-green)" }}
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <><Search className="w-4 h-4 mr-2" /> Verify</>
-              )}
+              {loading ? <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: "transparent transparent #0a0a0f #0a0a0f" }} /> : <><Search className="w-4 h-4 mr-2" /> Verify</>}
             </Button>
           </div>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="glass-card p-6 border-red-500/20 text-center">
-            <XCircle className="w-8 h-8 text-red-400 mx-auto mb-3" />
-            <p className="text-sm text-red-400">{error}</p>
+          <div className="cyber-card p-6 text-center" style={{ borderColor: "var(--neon-red)" }}>
+            <XCircle className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--neon-red)" }} />
+            <p className="text-xs" style={{ color: "var(--neon-red)" }}>{error}</p>
           </div>
         )}
 
@@ -186,138 +158,104 @@ const Verify = () => {
         {result && (
           <div className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
             {/* Verified Badge */}
-            <div className="glass-card p-6 border-emerald-500/20 text-center">
-              <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-emerald-400">Audit Verified Onchain ✓</h3>
-              <p className="text-xs text-muted-foreground mt-1">This audit result has been independently verified on the Stellar and GenLayer blockchains.</p>
+            <div className="cyber-card p-6 text-center" style={{ borderColor: "var(--neon-green)", boxShadow: "0 0 15px rgba(0,255,136,0.15)" }}>
+              <CheckCircle2 className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--neon-green)", filter: "drop-shadow(0 0 8px rgba(0,255,136,0.4))" }} />
+              <h3 className="text-sm font-display font-bold uppercase tracking-wider neon-text" style={{ color: "var(--neon-green)" }}>Audit Verified Onchain ✓</h3>
+              <p className="text-[10px] text-muted-foreground mt-1 tracking-wide">Independently verified on Stellar and GenLayer blockchains.</p>
             </div>
 
-            {/* ═══════ LIVE STELLAR VERIFICATION ═══════ */}
-            <div className="glass-card p-6 space-y-5 border-blue-500/20 bg-blue-500/[0.02]">
+            {/* ═══ LIVE STELLAR HORIZON VERIFICATION ═══ */}
+            <div className="cyber-card p-6 space-y-5" style={{ borderColor: "rgba(0,212,255,0.2)" }}>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                  <Globe className="w-4 h-4 text-blue-400" />
+                <div className="w-8 h-8 flex items-center justify-center border" style={{ borderColor: "var(--neon-cyan)", boxShadow: "0 0 6px rgba(0,212,255,0.2)" }}>
+                  <Globe className="w-4 h-4" style={{ color: "var(--neon-cyan)" }} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-foreground">Live Stellar Horizon Verification</h4>
-                  <p className="text-[10px] text-muted-foreground">Data fetched directly from <code className="text-blue-400">horizon-testnet.stellar.org</code> — not from our server</p>
+                  <h4 className="text-xs font-display font-bold uppercase tracking-wider">Live Stellar Verification</h4>
+                  <p className="text-[9px] text-muted-foreground tracking-wide">&gt; Data from <code style={{ color: "var(--neon-cyan)" }}>horizon-testnet.stellar.org</code></p>
                 </div>
               </div>
 
               {sv.loading && (
                 <div className="flex items-center justify-center gap-2 py-6">
-                  <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
-                  <p className="text-sm text-muted-foreground">Querying Stellar Horizon API...</p>
+                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--neon-cyan)" }} />
+                  <p className="text-xs text-muted-foreground">Querying Stellar Horizon...</p>
                 </div>
               )}
 
-              {sv.error && (
-                <div className="text-center py-4">
-                  <p className="text-xs text-amber-400">{sv.error}</p>
-                </div>
-              )}
+              {sv.error && <p className="text-center text-xs py-4" style={{ color: "var(--neon-red)" }}>{sv.error}</p>}
 
-              {/* Digest Match Result */}
+              {/* Digest Match */}
               {sv.digestMatch !== null && (
-                <div className={`rounded-xl p-4 border ${sv.digestMatch ? "bg-emerald-500/5 border-emerald-500/20" : "bg-red-500/5 border-red-500/20"}`}>
+                <div className="cyber-card p-4" style={{ borderColor: sv.digestMatch ? "rgba(0,255,136,0.3)" : "rgba(255,51,102,0.3)", background: sv.digestMatch ? "rgba(0,255,136,0.03)" : "rgba(255,51,102,0.03)" }}>
                   <div className="flex items-center gap-3">
-                    {sv.digestMatch ? (
-                      <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
-                    ) : (
-                      <XCircle className="w-6 h-6 text-red-400 shrink-0" />
-                    )}
+                    {sv.digestMatch ? <CheckCircle2 className="w-6 h-6 shrink-0" style={{ color: "var(--neon-green)" }} /> : <XCircle className="w-6 h-6 shrink-0" style={{ color: "var(--neon-red)" }} />}
                     <div>
-                      <p className={`text-sm font-bold ${sv.digestMatch ? "text-emerald-400" : "text-red-400"}`}>
-                        {sv.digestMatch ? "✓ Memo.hash Matches Attestation Digest" : "✗ Memo.hash Does NOT Match"}
+                      <p className="text-xs font-display font-bold uppercase tracking-wider" style={{ color: sv.digestMatch ? "var(--neon-green)" : "var(--neon-red)" }}>
+                        {sv.digestMatch ? "✓ Memo.hash Matches Digest" : "✗ Memo.hash Mismatch"}
                       </p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {sv.digestMatch
-                          ? "The SHA-256 digest anchored on Stellar exactly matches the audit attestation. This result is cryptographically verified."
-                          : "The Memo.hash on chain does not match the expected digest. This may indicate tampering."}
+                      <p className="text-[9px] text-muted-foreground mt-0.5 tracking-wide">
+                        {sv.digestMatch ? "SHA-256 digest on Stellar matches attestation. Cryptographically verified." : "The on-chain Memo.hash does not match. Possible tampering."}
                       </p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Side-by-side Hash Comparison */}
+              {/* Digest Comparison */}
               {sv.memoHex && result.attestationDigest && (
                 <div className="space-y-3">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Digest Comparison</p>
+                  <p className="font-label text-[9px] uppercase tracking-[0.2em] text-muted-foreground">&gt; Digest Comparison</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="rounded-lg bg-secondary/60 px-4 py-3 border border-border/50">
-                      <p className="text-[9px] uppercase tracking-wider text-blue-400 font-bold mb-1">📡 From Stellar Horizon (Memo.hash)</p>
-                      <code className="text-[10px] font-mono text-foreground break-all leading-relaxed">{sv.memoHex}</code>
+                    <div className="cyber-card p-3" style={{ borderColor: "rgba(0,212,255,0.15)" }}>
+                      <p className="font-label text-[8px] uppercase tracking-[0.2em] mb-1" style={{ color: "var(--neon-cyan)" }}>📡 From Stellar Horizon</p>
+                      <code className="text-[9px] font-mono text-foreground break-all leading-relaxed">{sv.memoHex}</code>
                     </div>
-                    <div className="rounded-lg bg-secondary/60 px-4 py-3 border border-border/50">
-                      <p className="text-[9px] uppercase tracking-wider text-primary font-bold mb-1">🔏 From Nexa Ledger (Attestation Digest)</p>
-                      <code className="text-[10px] font-mono text-foreground break-all leading-relaxed">{result.attestationDigest}</code>
+                    <div className="cyber-card p-3" style={{ borderColor: "rgba(0,255,136,0.15)" }}>
+                      <p className="font-label text-[8px] uppercase tracking-[0.2em] mb-1" style={{ color: "var(--neon-green)" }}>🔏 From Nexa Ledger</p>
+                      <code className="text-[9px] font-mono text-foreground break-all leading-relaxed">{result.attestationDigest}</code>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Stellar Transaction Details */}
+              {/* Tx Details */}
               {(sv.attestationTx || sv.paymentTx) && (
                 <div className="space-y-3">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Stellar Transaction Data</p>
+                  <p className="font-label text-[9px] uppercase tracking-[0.2em] text-muted-foreground">&gt; Stellar Transaction Data</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {sv.attestationTx && (
-                      <div className="rounded-lg bg-secondary/40 px-4 py-3 border border-border/50 space-y-2">
-                        <p className="text-[9px] uppercase tracking-wider text-emerald-400 font-bold">🔗 Attestation Transaction</p>
-                        <div className="space-y-1 text-[11px]">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Status</span>
-                            <span className={sv.attestationTx.successful ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
-                              {sv.attestationTx.successful ? "✓ Confirmed" : "✗ Failed"}
-                            </span>
+                      <div className="cyber-card p-3 space-y-1.5" style={{ borderColor: "rgba(0,255,136,0.15)" }}>
+                        <p className="font-label text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--neon-green)" }}>🔗 Attestation Tx</p>
+                        {[
+                          ["Status", sv.attestationTx.successful ? "✓ Confirmed" : "✗ Failed"],
+                          ["Ledger", `#${sv.attestationTx.ledger}`],
+                          ["Fee", `${sv.attestationTx.fee_charged ? (parseInt(sv.attestationTx.fee_charged) / 10000000).toFixed(7) : "?"} XLM`],
+                          ["Memo", sv.attestationTx.memo_type || "none"],
+                          ["Time", sv.attestationTx.created_at ? new Date(sv.attestationTx.created_at).toLocaleString() : "?"],
+                        ].map(([k, v]) => (
+                          <div key={k} className="flex justify-between text-[10px]">
+                            <span className="text-muted-foreground">{k}</span>
+                            <span className="font-mono" style={{ color: k === "Status" ? (sv.attestationTx!.successful ? "var(--neon-green)" : "var(--neon-red)") : "inherit" }}>{v}</span>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Ledger</span>
-                            <span className="text-foreground font-mono">#{sv.attestationTx.ledger}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Fee</span>
-                            <span className="text-foreground font-mono">{sv.attestationTx.fee_charged ? (parseInt(sv.attestationTx.fee_charged) / 10000000).toFixed(7) : "?"} XLM</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Memo Type</span>
-                            <span className="text-blue-400 font-mono font-bold">{sv.attestationTx.memo_type}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Time</span>
-                            <span className="text-foreground">{sv.attestationTx.created_at ? new Date(sv.attestationTx.created_at).toLocaleString() : "?"}</span>
-                          </div>
-                        </div>
+                        ))}
                       </div>
                     )}
                     {sv.paymentTx && (
-                      <div className="rounded-lg bg-secondary/40 px-4 py-3 border border-border/50 space-y-2">
-                        <p className="text-[9px] uppercase tracking-wider text-amber-400 font-bold">⭐ Payment Transaction</p>
-                        <div className="space-y-1 text-[11px]">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Status</span>
-                            <span className={sv.paymentTx.successful ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
-                              {sv.paymentTx.successful ? "✓ Confirmed" : "✗ Failed"}
-                            </span>
+                      <div className="cyber-card p-3 space-y-1.5" style={{ borderColor: "rgba(0,212,255,0.15)" }}>
+                        <p className="font-label text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--neon-cyan)" }}>⭐ Payment Tx</p>
+                        {[
+                          ["Status", sv.paymentTx.successful ? "✓ Confirmed" : "✗ Failed"],
+                          ["Ledger", `#${sv.paymentTx.ledger}`],
+                          ["Fee", `${sv.paymentTx.fee_charged ? (parseInt(sv.paymentTx.fee_charged) / 10000000).toFixed(7) : "?"} XLM`],
+                          ["Payer", `${sv.paymentTx.source_account?.slice(0, 6)}...${sv.paymentTx.source_account?.slice(-6)}`],
+                          ["Time", sv.paymentTx.created_at ? new Date(sv.paymentTx.created_at).toLocaleString() : "?"],
+                        ].map(([k, v]) => (
+                          <div key={k} className="flex justify-between text-[10px]">
+                            <span className="text-muted-foreground">{k}</span>
+                            <span className="font-mono" style={{ color: k === "Status" ? (sv.paymentTx!.successful ? "var(--neon-green)" : "var(--neon-red)") : "inherit" }}>{v}</span>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Ledger</span>
-                            <span className="text-foreground font-mono">#{sv.paymentTx.ledger}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Fee</span>
-                            <span className="text-foreground font-mono">{sv.paymentTx.fee_charged ? (parseInt(sv.paymentTx.fee_charged) / 10000000).toFixed(7) : "?"} XLM</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Payer</span>
-                            <span className="text-foreground font-mono text-[9px]">{sv.paymentTx.source_account?.slice(0, 8)}...{sv.paymentTx.source_account?.slice(-8)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Time</span>
-                            <span className="text-foreground">{sv.paymentTx.created_at ? new Date(sv.paymentTx.created_at).toLocaleString() : "?"}</span>
-                          </div>
-                        </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -326,93 +264,57 @@ const Verify = () => {
             </div>
 
             {/* Score + Verdict */}
-            <div className="glass-card p-6">
+            <div className="cyber-card p-6">
               <div className="flex flex-col md:flex-row items-center gap-6">
                 <ScoreRing score={result.matchScore} />
                 <div className="flex-1 space-y-2 text-center md:text-left">
-                  <h3 className="text-xl font-bold text-foreground">{result.jobTitle}</h3>
+                  <h3 className="text-base font-display font-bold text-foreground uppercase tracking-wider">{result.jobTitle}</h3>
                   <div className="flex items-center gap-3 justify-center md:justify-start">
                     {verdictIcon[result.verdict]}
-                    <span className={`text-lg font-bold ${verdictColor[result.verdict] || "text-foreground"}`}>
-                      {result.verdict}
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-secondary text-xs font-mono border border-border">
-                      {result.seniority}
-                    </span>
+                    <span className="text-sm font-display font-bold" style={{ color: verdictColor[result.verdict] }}>{result.verdict}</span>
+                    <span className="px-2 py-0.5 border text-[10px] font-mono uppercase tracking-wider" style={{ borderColor: "hsl(var(--border))" }}>{result.seniority}</span>
                   </div>
-                  <p className="text-sm italic text-muted-foreground leading-relaxed">{result.explanation}</p>
+                  <p className="text-xs italic text-muted-foreground leading-relaxed tracking-wide">{result.explanation}</p>
                 </div>
               </div>
             </div>
 
-            {/* Onchain Proofs */}
-            <div className="glass-card p-6 space-y-4">
-              <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">Onchain Proof Links</h4>
+            {/* Onchain Links */}
+            <div className="cyber-card p-6 space-y-4">
+              <h4 className="font-label text-[9px] uppercase tracking-[0.2em] text-muted-foreground">&gt; Onchain Proof Links</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {result.stellarPaymentHash && (
-                  <a
-                    href={`${STELLAR_EXPLORER}${result.stellarPaymentHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="glass-card p-4 hover:border-primary/40 transition-all group"
+                {[
+                  { hash: result.stellarPaymentHash, label: "⭐ Stellar Payment", url: `${STELLAR_EXPLORER}${result.stellarPaymentHash}`, neon: "var(--neon-green)" },
+                  { hash: result.stellarAttestationHash, label: "🔗 Attestation", url: `${STELLAR_EXPLORER}${result.stellarAttestationHash}`, neon: "var(--neon-cyan)" },
+                  { hash: result.genLayerHash, label: "🧠 GenLayer", url: `https://studio.genlayer.com/explorer/tx/${result.genLayerHash}`, neon: "var(--neon-magenta)" },
+                ].filter((l) => l.hash).map((link) => (
+                  <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer"
+                    className="cyber-card p-4 transition-all group"
+                    style={{ borderColor: `${link.neon}20` }}
                   >
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">⭐ Stellar Payment</p>
-                    <p className="text-xs font-mono text-primary truncate group-hover:underline">
-                      {result.stellarPaymentHash.slice(0, 16)}...
-                    </p>
+                    <p className="font-label text-[9px] uppercase tracking-[0.2em] mb-1" style={{ color: link.neon }}>{link.label}</p>
+                    <p className="text-[10px] font-mono truncate group-hover:underline" style={{ color: link.neon }}>{link.hash.slice(0, 16)}...</p>
                     <ExternalLink className="w-3 h-3 text-muted-foreground mt-2" />
                   </a>
-                )}
-                {result.stellarAttestationHash && (
-                  <a
-                    href={`${STELLAR_EXPLORER}${result.stellarAttestationHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="glass-card p-4 hover:border-primary/40 transition-all group"
-                  >
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">🔗 Stellar Attestation</p>
-                    <p className="text-xs font-mono text-primary truncate group-hover:underline">
-                      {result.stellarAttestationHash.slice(0, 16)}...
-                    </p>
-                    <ExternalLink className="w-3 h-3 text-muted-foreground mt-2" />
-                  </a>
-                )}
-                {result.genLayerHash && (
-                  <a
-                    href={`https://studio.genlayer.com/explorer/tx/${result.genLayerHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="glass-card p-4 hover:border-primary/40 transition-all group"
-                  >
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">🧠 GenLayer Consensus</p>
-                    <p className="text-xs font-mono text-primary truncate group-hover:underline">
-                      {result.genLayerHash.slice(0, 16)}...
-                    </p>
-                    <ExternalLink className="w-3 h-3 text-muted-foreground mt-2" />
-                  </a>
-                )}
+                ))}
               </div>
             </div>
 
             {/* Attestation Digest */}
             {result.attestationDigest && (
-              <div className="glass-card p-6">
-                <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-2">Attestation Digest (SHA-256)</h4>
-                <p className="text-xs text-muted-foreground mb-3">
-                  This digest is anchored as a <code className="text-primary">Memo.hash</code> in the Stellar attestation transaction above. Compare it to verify integrity.
-                </p>
-                <div className="flex items-center gap-2 bg-secondary/80 rounded-lg px-4 py-3 border border-border/50">
-                  <code className="text-xs font-mono text-foreground flex-1 break-all">{result.attestationDigest}</code>
+              <div className="cyber-card p-6">
+                <h4 className="font-label text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-2">&gt; Attestation Digest (SHA-256)</h4>
+                <div className="flex items-center gap-2 bg-background px-4 py-3 border border-border">
+                  <code className="text-[10px] font-mono text-foreground flex-1 break-all">{result.attestationDigest}</code>
                   <button onClick={copyDigest} className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
-                    {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    {copied ? <Check className="w-4 h-4" style={{ color: "var(--neon-green)" }} /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Timestamp */}
-            <div className="text-center text-xs text-muted-foreground">
-              Audit completed on {new Date(result.completedAt).toLocaleString()} • Consensus in {result.elapsedSeconds}s
+            <div className="text-center text-[10px] text-muted-foreground tracking-wide">
+              Completed {new Date(result.completedAt).toLocaleString()} · Consensus in {result.elapsedSeconds}s
             </div>
           </div>
         )}
