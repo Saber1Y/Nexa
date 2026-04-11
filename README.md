@@ -1,20 +1,20 @@
 
-# Nexa — Autonomous AI Payment Bridge on Stellar
+# Nexa - Autonomous AI Payment Bridge on Stellar
 
 ## Overview
 
-[**Nexa**](https://nexa-ai-bridge.vercel.app/) demonstrates how **Stellar becomes the autonomous payment infrastructure for the AI agent economy**. Built for the [Agents on Stellar](https://stellar.org) hackathon, Nexa uses the **Machine Payments Protocol (MPP)** to let AI agents autonomously pay USDC or XLM on Stellar to access decentralized AI reasoning — no human intervention, no API keys, no subscriptions.
+[**Nexa**](https://nexa-ai-bridge.vercel.app/) demonstrates how **Stellar becomes the autonomous payment infrastructure for the AI agent economy**. Built for the [Agents on Stellar](https://stellar.org) hackathon, Nexa uses the **Machine Payments Protocol (MPP)** to let AI agents autonomously pay USDC or XLM on Stellar to access decentralized AI reasoning - no human intervention, no API keys, no subscriptions.
 
-<img width="1524" height="762" alt="09 04 2026_14 12 47_REC" src="https://github.com/user-attachments/assets/20aaa197-6cfe-42ba-8121-91a3429b4cfe" />
+<img width="1646" height="828" alt="11 04 2026_16 05 31_REC" src="https://github.com/user-attachments/assets/53e5e13a-38ca-44f1-a0d7-88cd6e0ec881" />
 
-The concept: **an AI agent sends an HTTP request, Stellar handles the payment, and the results are attested back on Stellar.** The entire lifecycle — payment, execution, and proof — is anchored on the Stellar ledger.
+The concept: **an AI agent sends an HTTP request, Stellar handles the payment, and the results are attested back on Stellar.** The entire lifecycle: payment, execution, and proof, is anchored on the Stellar ledger.
 
 ### Stellar-Native Features
 
 | Feature | Stellar Integration |
 |---|---|
 |  **Machine Payments Protocol (MPP)** | First real-world implementation of Stellar's `@stellar/mpp` standard for autonomous agent payments via HTTP `402 Payment Required`. |
-|  **Dual Currency (USDC + XLM)** | Supports both Soroban SAC USDC and native XLM payments — maximum flexibility within the Stellar ecosystem. |
+|  **Dual Currency (USDC + XLM)** | Supports both Soroban SAC USDC and native XLM payments - maximum flexibility within the Stellar ecosystem. |
 |  **Zero Gas USDC** | The bridge sponsors XLM network fees for USDC payments. Agents pay only the dollar amount, with zero gas friction. |
 |  **On-Chain Attestation** | Every audit result is SHA-256 hashed and anchored on Stellar via `Memo.hash`, creating an immutable, independently verifiable proof. |
 |  **Freighter Wallet** | Native Stellar wallet integration for seamless UX. |
@@ -34,7 +34,7 @@ The concept: **an AI agent sends an HTTP request, Stellar handles the payment, a
 - **Node.js** ≥ 20
 - **npm** or **bun**
 - [**Freighter Wallet**](https://freighter.app) browser extension (for the frontend)
-- Stellar Testnet USDC (see [Setup USDC](#funding-testnet-usdc))
+- Stellar Testnet USDC & XLM
 
 ### 1. Clone & Install
 
@@ -224,7 +224,7 @@ After every successful audit, the bridge anchors a cryptographic proof on Stella
 SHA-256( "nexa:audit:{screeningId}|{verdict}|{matchScore}|{walletAddress}" )
 ```
 
-This digest is submitted as a `Memo.hash` on a self-payment transaction (0.0000001 XLM). The result is a verifiable, immutable link between the Stellar payment and the AI audit outcome — visible to anyone on [Stellar Expert](https://stellar.expert/explorer/testnet).
+This digest is submitted as a `Memo.hash` on a self-payment transaction (0.0000001 XLM). The result is a verifiable, immutable link between the Stellar payment and the AI audit outcome - visible to anyone on [Stellar Expert](https://stellar.expert/explorer/testnet).
 
 **Why this matters:**
 - **Verifiable** - Anyone can recompute the SHA-256 from the audit data and verify it matches the Memo.hash on Stellar
@@ -410,7 +410,7 @@ node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
 - [x] On-chain SHA-256 attestation anchoring on Stellar (`Memo.hash`)
 - [x] Triple-verified proof panel (Stellar payment + Stellar attestation + AI consensus)
 - [x] Agent-to-agent autonomous demo (`customer-agent-demo.mjs`)
-- [x] Audit Verification Page — verify any audit by Stellar/GenLayer hash
+- [x] Audit Verification Page - verify any audit by Stellar/GenLayer hash
 - [x] Live Audit History dashboard with Stellar Explorer links
 - [x] Bridge Analytics dashboard with live production metrics
 - [x] Downloadable PDF Audit Certificates with onchain proof links
@@ -453,7 +453,7 @@ Nexa is **built on testnet but designed for mainnet**. Below is a production dep
 | Agent Payment (Revenue) | +1.00 USDC or +10 XLM | Collected by the bridge |
 | Attestation Tx (Self-payment) | ~0.00001 XLM | Network fee for `Memo.hash` anchoring |
 | Facilitator Submission | **Free** | Sponsored by OpenZeppelin Built on Stellar |
-| GenLayer Consensus | ~0.01 GEN | Gas for `submit_screening` + `get_screening` |
+| GenLayer Consensus | Gasless | `submit_screening` + `get_screening` |
 
 **Net margin per audit**: ~$0.99 USDC (at current prices)
 
