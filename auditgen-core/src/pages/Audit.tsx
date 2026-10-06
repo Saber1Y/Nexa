@@ -5,7 +5,8 @@ import Navbar from "@/components/Navbar";
 import ResumeInput from "@/components/ResumeInput";
 import ConsensusLoader from "@/components/ConsensusLoader";
 import AuditResults from "@/components/AuditResults";
-import BulkAuditView from "@/components/BulkAuditView";
+// Bulk Registry is not available yet - panel and toggle commented out.
+// import BulkAuditView from "@/components/BulkAuditView";
 import { useX402Bot, type AuditScreeningResults, type AuditSuccessResponse, type X402Stage } from "@/hooks/useX402Bot";
 import { useWallet } from "@/hooks/useWallet";
 import { explorerTxUrl, formatUsdtAmount } from "@/utils/botChain";
@@ -88,39 +89,15 @@ const Audit = () => {
           </p>
         </div>
 
-        {/* Mode Switcher */}
-        <div className="flex justify-center mb-4">
-          <div className="bg-card border border-border p-1 flex items-center gap-1 cyber-chamfer-sm">
-            <button
-              onClick={() => setAuditMode("single")}
-              className={`px-6 py-2 text-[10px] font-display font-bold uppercase tracking-[0.15em] transition-all cyber-chamfer-sm ${
-                auditMode === "single"
-                  ? ""
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              style={auditMode === "single" ? { background: "var(--neon-green)", color: "#0a0a0f" } : undefined}
-            >
-              Single Candidate
-            </button>
-            <button
-              onClick={() => setAuditMode("bulk")}
-              className={`px-6 py-2 text-[10px] font-display font-bold uppercase tracking-[0.15em] transition-all flex items-center gap-2 cyber-chamfer-sm ${
-                auditMode === "bulk"
-                  ? ""
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              style={auditMode === "bulk" ? { background: "var(--neon-green)", color: "#0a0a0f" } : undefined}
-            >
-              Bulk Registry
-              <span className="px-1.5 py-0.5 text-[7px] uppercase tracking-wider border" style={{ borderColor: auditMode === "bulk" ? "#0a0a0f" : "var(--neon-green)", color: auditMode === "bulk" ? "#0a0a0f" : "var(--neon-green)" }}>Dev</span>
-            </button>
-          </div>
-        </div>
+        {/* Mode Switcher removed: only Single Candidate mode exists.
+            The Bulk Registry toggle and panel stay commented out because the feature is not available. */}
 
+        {/* Bulk Registry panel - disabled, feature not available
         {auditMode === "bulk" ? (
           <BulkAuditView />
         ) : (
-          <>
+        */}
+        <>
             {/* Job Details */}
             <div className="cyber-card p-6 space-y-4">
               <h3 className="text-xs font-display font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
@@ -171,8 +148,8 @@ const Audit = () => {
                 </p>
               )}
             </div>
-          </>
-        )}
+        </>
+        {/* )} */}
 
         {/* Insufficient-funds hint */}
         {isConnected && address && !results && !isPaying && (

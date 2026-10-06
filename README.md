@@ -237,7 +237,7 @@ Anyone can verify a result without trusting this repository:
 - GenLayer is preserved as an adapter but is not operational here (its configured contract has no code).
 - `NexaReceiptRegistry` records one receipt per `paymentId` by design; a second receipt for the same id reverts.
 - Browser wallet payments were not exercised in a real browser in this environment; the same protocol was verified with the scripted agent.
-- Bulk screening in the UI is a waitlisted preview, not a live feature.
+- Bulk screening is disabled: the mode switcher and the Bulk Registry panel are commented out in `auditgen-core/src/pages/Audit.tsx` (the `POST /api/waitlist` endpoint still works).
 - The upstream LLM endpoint can return `503 source_unavailable`; the client retries and never charges on upstream failure.
 
 ## Deploy
