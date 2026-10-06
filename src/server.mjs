@@ -313,6 +313,49 @@ app.post("/api/skills", async (req, res) => {
 });
 
 
+
+app.post("/api/match/batch", async (req, res) => {
+  const resourceUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  const signatureHeader = req.header("PAYMENT-SIGNATURE");
+  const {jobDescription = "", resumes = []} = req.body || {};
+  if (!jobDescription || typeof jobDescription !== "string" || !jobDescription.trim()) return res.status(400).json({error: "jobDescription is required"});
+  if (!Array.isArray(resumes) || resumes.length === 0) return res.status(400).json({error: "resumes array required"});
+  const items = resumes.filter(r => r && typeof r.resumeText === "string" && r.resumeText.trim()).slice(0, 20);
+  if (items.length === 0) return res.status(400).json({error: "no valid resumes"});
+  if (!signatureHeader) return send402(req, res);
+  let verified;
+  try {
+    const payload = parsePaymentSignature(signatureHeader);
+    verified = await verifyPayment(payload, resourceUrl);
+  } catch (error) {
+    return send402(req, res, error instanceof Error ? error.message : "invalid payment");
+  }
+  const id = paymentId(verified);
+  if (seenPayments.has(id)) return res.status(409).json({error: "duplicate_payment", paymentId: id});
+  let settlement;
+  try {
+    settlement = await settlePayment(verified);
+  } catch (error) {
+    return res.status(402).json({error: "settlement_failed", detail: error instanceof Error ? error.message : String(error)});
+  }
+  seenPayments.add(id);
+  res.setHeader("PAYMENT-RESPONSE", encodeBase64Url(settlement));
+  const results = [];
+  for (let i=0; i<items.length; i++) {
+    try {
+      const system = `You are an ATS matcher. Return ONLY JSON with keys match_score (0-100), overlaps (string[]), gaps (string[]), verdict ("STRONG","GOOD","WEAK","NONE"), summary (string<=80).`;
+      const user = `JOB_DESCRIPTION:\n${jobDescription}\n\nRESUME:\n${items[i].resumeText}`;
+      const {runAudit} = await import("./aiAdapter.mjs");
+      const audit = await runAudit({jobTitle: "match", jobDescription, mustHaveSkills: "", resumeText: items[i].resumeText, payer: verified.payer, adapter: undefined, systemPrompt: system, userPrompt: user});
+      results.push({index: i, ok: true, results: audit.results});
+    } catch (e) {
+      results.push({index: i, ok: false, error: e.message});
+    }
+  }
+  res.json({ok: true, serviceId: MATCH_SERVICE_ID, batch: true, count: results.length, paymentId: id, settlement, results});
+});
+
+
 export default app;
 
 if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
