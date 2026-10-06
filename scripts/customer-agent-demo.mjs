@@ -1,109 +1,83 @@
 import "dotenv/config";
-import { Mppx } from "mppx/client";
-import { stellar } from "@stellar/mpp/charge/client";
-import { USDC_SAC_TESTNET } from "@stellar/mpp";
+import {createPublicClient, createWalletClient, http, parseAbi, verifyTypedData} from "viem";
+import {privateKeyToAccount} from "viem/accounts";
+import {randomBytes} from "node:crypto";
+
+const RPC = process.env.BOT_RPC_URL || "https://rpc.bohr.life";
+const CHAIN_ID = 968;
+const NETWORK = "eip155:968";
+const TOKEN = process.env.BOT_USDT_ADDRESS || "0x75edC9335175Fc0552D51D48439F229c10420fe3";
+const PERMIT2 = process.env.BOT_PERMIT2_ADDRESS || "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+const PROXY = process.env.BOT_EXACT_PERMIT2_PROXY || "0x402085c248EeA27D92E8b30b2C58ed07f9E20001";
+const BASE = (process.env.NEXA_BASE_URL || "http://localhost:3402").replace(/\/$/, "");
+const AMOUNT = process.env.NEXA_AUDIT_PRICE_ATOMIC || "100000";
+const PRIVATE_KEY = process.env.NEXA_AGENT_PRIVATE_KEY;
+const chain = {id: CHAIN_ID, name: "BOT Chain Bohr Testnet", nativeCurrency: {name: "tBOT", symbol: "tBOT", decimals: 18}, rpcUrls: {default: {http: [RPC]}}};
+
+if (!PRIVATE_KEY || !/^0x[0-9a-fA-F]{64}$/.test(PRIVATE_KEY)) throw new Error("NEXA_AGENT_PRIVATE_KEY must be set to a 32-byte EVM key");
+
+const account = privateKeyToAccount(PRIVATE_KEY);
+const publicClient = createPublicClient({chain, transport: http(RPC)});
+const wallet = createWalletClient({account, chain, transport: http(RPC)});
+const erc20Abi = parseAbi(["function allowance(address,address) view returns (uint256)", "function approve(address,uint256) returns (bool)"]);
+const permitTypes = {
+  TokenPermissions: [{name: "token", type: "address"}, {name: "amount", type: "uint256"}],
+  PermitWitnessTransferFrom: [
+    {name: "permitted", type: "TokenPermissions"}, {name: "spender", type: "address"},
+    {name: "nonce", type: "uint256"}, {name: "deadline", type: "uint256"}, {name: "witness", type: "Witness"},
+  ],
+  Witness: [{name: "to", type: "address"}, {name: "validAfter", type: "uint256"}],
+};
+const domain = {name: "Permit2", chainId: CHAIN_ID, verifyingContract: PERMIT2};
+const b64 = (v) => Buffer.from(JSON.stringify(v, (k, x) => (typeof x === "bigint" ? x.toString() : x))).toString("base64url");
+const fromB64 = (v) => JSON.parse(Buffer.from(v, "base64url").toString("utf8"));
 
 async function main() {
-  console.log("DEBUG: Script started");
-  console.log("\n🕵️  Autonomous Customer Agent — Demo Launch");
-  console.log("────────────────────────────────────────────────");
+  console.log("NEXA AGENT\n──────────");
+  console.log(`Agent: ${account.address}`);
+  console.log(`Service: Resume Intelligence`);
+  console.log(`Price: ${(Number(AMOUNT) / 1e6).toFixed(6)} tUSDT`);
+  console.log(`Network: ${NETWORK}`);
 
-  // 1. Initialize the MPP Client
-  // This client is "payment-aware". It will automatically detect 402 challenges
-  // and sign Stellar transactions using the provided secret key.
-  const mpp = Mppx.create({
-    methods: [
-      stellar.charge({
-        secretKey: "SCB4Y7YWI4OEFKJKY4VVJ7VSPCMKBBDHQBZKNOIE36ZLSTH3HCTVSAX7", // Separate Demo Agent Wallet
-        currency: USDC_SAC_TESTNET,
-        realm: "NexaUSDC",
-      }),
-    ],
-    // Event logger to see the autonomous magic in action
-    onChallenge: (response) => {
-      console.log("💳 402 Payment Required detected!");
-      console.log("   Auto-signing 1.00 USDC transfer on Stellar...");
-    }
-  });
+  const allowance = await publicClient.readContract({address: TOKEN, abi: erc20Abi, functionName: "allowance", args: [account.address, PERMIT2]});
+  const budget = BigInt(process.env.NEXA_AGENT_APPROVAL_ATOMIC || "10000000");
+  if (allowance < budget) {
+    console.log(`Permit2 approval: submitting token approval for budget ${budget}...`);
+    const hash = await wallet.writeContract({address: TOKEN, abi: erc20Abi, functionName: "approve", args: [PERMIT2, budget]});
+    await publicClient.waitForTransactionReceipt({hash});
+    console.log(`Approval: ${hash}`);
+  } else console.log("Permit2 approval: already sufficient");
 
-  // Pointing to your LIVE Vercel App
-  const url = "https://nexa-ai-bridge.vercel.app/api/audit";
-  /* 📂 Change these values to test different scenarios! */
-const auditData = {
-  jobTitle: "Stellar Developer", // Change to "React Developer", "Accountant", etc.
-  jobDescription: "Specializing in Soroban Smart Contracts.",
-  mustHaveSkills: "Rust, JavaScript, Stellar SDK, Horizon API",
-  resumeText: "I am a Rust expert with 5 years of experience in blockchain..."
-};
+  const body = {jobTitle: "BOT Chain Engineer", jobDescription: "Build reliable EVM payment infrastructure", mustHaveSkills: "viem, EVM, x402", resumeText: "Five years building payment systems and machine-native APIs."};
+  const first = await fetch(`${BASE}/api/audit`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(body)});
+  if (first.status !== 402) throw new Error(`Expected 402, got ${first.status}: ${await first.text()}`);
+  console.log("Request: 402 Payment Required");
+  const required = fromB64(first.headers.get("PAYMENT-REQUIRED"));
+  const accepted = required.accepts.find((x) => x.network === NETWORK && x.asset.toLowerCase() === TOKEN.toLowerCase());
+  if (!accepted) throw new Error("No BOT tUSDT payment requirement returned");
 
-
-  console.log("🔍 Requesting resume audit from Nexa Bridge...");
-
-  try {
-    // 2. Call the Bridge
-    // Note: mpp.fetch handles the 402, signing, and retry COMPLETELY automatically.
-    const response = await mpp.fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(auditData)
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({ error: "Unknown error" }));
-      
-      // Handle Undetermined Consensus gracefully
-      if (response.status === 422 && errorBody.code === "CONSENSUS_UNDETERMINED") {
-        console.log("\n⚖️  AI Consensus: UNDETERMINED");
-        console.log("────────────────────────────────────────────────");
-        console.log("   The 5 AI validators could NOT reach agreement.");
-        console.log("   This happens when the input is ambiguous or an edge case.");
-        if (errorBody.genLayerHash) {
-          console.log(`\n🧠 GenLayer Tx: ${errorBody.genLayerHash}`);
-        }
-        console.log(`\n💡 Hint: ${errorBody.hint}`);
-        console.log("\n📝 Your USDC payment was still processed. Try again with clearer job details.");
-        return;
-      }
-
-      throw new Error(`Bridge Error (${response.status}): ${JSON.stringify(errorBody)}`);
-    }
-
-    const result = await response.json();
-
-    // 3. Display Results
-    console.log("\n✅ Audit Finalized Successfully!");
-    console.log("────────────────────────────────────────────────");
-    console.log(`🤖 Screening ID: ${result.screeningId}`);
-    
-    if (result.results) {
-      console.log("\n📊 AI Assessment:");
-      console.log(`   Match Score: ${result.results.match_score}/100`);
-      console.log(`   Verdict:     ${result.results.verdict}`);
-      console.log(`   Seniority:   ${result.results.seniority}`);
-      console.log(`   Summary:     ${result.results.explanation}`);
-
-      console.log("\n🛡️  On-Chain Verification Proofs:");
-      console.log("────────────────────────────────────────────────");
-      console.log(`⭐ Stellar Payment:     ${result.results.stellarPaymentHash}`);
-      console.log(`🧠 GenLayer Consensus:  ${result.results.txHash}`);
-      console.log(`🔗 On-Chain Attestation: ${result.results.stellarAttestationHash}`);
-      console.log(`🔐 Attestation Digest:  ${result.results.attestationDigest}`);
-    } else {
-      console.log("\n⚠️ Results pending or not returned in full.");
-    }
-
-    console.log("\n🚀 The agent successfully paid and received the audit autonomously!");
-
-  } catch (error) {
-    console.error("\n❌ Agent Error:", error.message);
-    if (error.cause) {
-      console.error("   Cause:", error.cause);
-    } else {
-      console.error("   Full Error:", error);
-    }
-  }
+  const now = BigInt(Math.floor(Date.now() / 1000));
+  const auth = {
+    permitted: {token: TOKEN, amount: BigInt(accepted.amount)},
+    spender: PROXY,
+    nonce: BigInt(`0x${randomBytes(32).toString("hex")}`),
+    deadline: now + BigInt(accepted.maxTimeoutSeconds),
+    witness: {to: accepted.payTo, validAfter: now - 5n},
+  };
+  const signature = await account.signTypedData({domain, types: permitTypes, primaryType: "PermitWitnessTransferFrom", message: auth});
+  const payload = {x402Version: 2, resource: required.resource, accepted, payload: {signature, permit2Authorization: {...auth, from: account.address}}, extensions: {}};
+  console.log("Payment: authorization signed");
+  const paid = await fetch(`${BASE}/api/audit`, {method: "POST", headers: {"content-type": "application/json", "PAYMENT-SIGNATURE": b64(payload)}, body: JSON.stringify(body)});
+  const paymentResponse = paid.headers.get("PAYMENT-RESPONSE");
+  if (paymentResponse) console.log("Settlement:", fromB64(paymentResponse));
+  const result = await paid.json();
+  console.log(`HTTP result: ${paid.status}`);
+  if (!paid.ok) throw new Error(JSON.stringify(result));
+  console.log("Result:", JSON.stringify(result.results));
+  console.log("Receipt:", JSON.stringify(result.receipt));
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error("NEXA AGENT FAILED:", error.message);
+  process.exitCode = 1;
+});
