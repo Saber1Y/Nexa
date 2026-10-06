@@ -56,11 +56,15 @@ function paymentId(payment) {
   return `0x${crypto.createHash("sha256").update(`${payment.payer}:${payment.auth.nonce}:${AUDIT_SERVICE_ID}`).digest("hex")}`;
 }
 
-function send402(req, res, error) {
+function send402(req, res, error, serviceId = AUDIT_SERVICE_ID, priceAtomic = AUDIT_PRICE_ATOMIC) {
   const body = paymentRequired(`${req.protocol}://${req.get("host")}${req.originalUrl}`, error);
+  if (serviceId !== AUDIT_SERVICE_ID || priceAtomic !== AUDIT_PRICE_ATOMIC) {
+    body.accepts = body.accepts.map((a) => ({...a, amount: priceAtomic, extra: {...a.extra, serviceId}}));
+  }
   res.setHeader("PAYMENT-REQUIRED", encodeBase64Url(body));
   return res.status(402).json(body);
 }
+
 
 const health = (req, res) => res.json({status: "ok", product: "Nexa", network: "eip155:968", asset: BOT_USDT_ADDRESS, payTo: BOT_PAY_TO, priceAtomic: AUDIT_PRICE_ATOMIC});
 app.get("/health", health);
@@ -139,14 +143,14 @@ app.post("/api/audit", async (req, res) => {
   if (!jobTitle || typeof jobTitle !== "string") return res.status(400).json({error: "jobTitle is required"});
   if (!resumeText || typeof resumeText !== "string" || !resumeText.trim()) return res.status(400).json({error: "resumeText is required"});
 
-  if (!signatureHeader) return send402(req, res);
+  if (!signatureHeader) return send402(req, res, undefined, MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
 
   let verified;
   try {
     const payload = parsePaymentSignature(signatureHeader);
     verified = await verifyPayment(payload, resourceUrl);
   } catch (error) {
-    return send402(req, res, error instanceof Error ? error.message : "invalid payment");
+    return send402(req, res, error instanceof Error ? error.message : "invalid payment", MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
   }
 
   const id = paymentId(verified);
@@ -240,7 +244,7 @@ app.post("/api/match", async (req, res) => {
   const {jobDescription = "", resumeText = ""} = req.body || {};
   if (!jobDescription || typeof jobDescription !== "string" || !jobDescription.trim()) return res.status(400).json({error: "jobDescription is required"});
   if (!resumeText || typeof resumeText !== "string" || !resumeText.trim()) return res.status(400).json({error: "resumeText is required"});
-  if (!signatureHeader) return send402(req, res);
+  if (!signatureHeader) return send402(req, res, undefined, MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
   let verified;
   try {
     const payload = parsePaymentSignature(signatureHeader);
@@ -279,7 +283,7 @@ app.post("/api/skills", async (req, res) => {
   const {resumeText = "", text = ""} = req.body || {};
   const content = resumeText || text;
   if (!content || typeof content !== "string" || !content.trim()) return res.status(400).json({error: "resumeText or text is required"});
-  if (!signatureHeader) return send402(req, res);
+  if (!signatureHeader) return send402(req, res, undefined, MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
   let verified;
   try {
     const payload = parsePaymentSignature(signatureHeader);
@@ -322,7 +326,7 @@ app.post("/api/match/batch", async (req, res) => {
   if (!Array.isArray(resumes) || resumes.length === 0) return res.status(400).json({error: "resumes array required"});
   const items = resumes.filter(r => r && typeof r.resumeText === "string" && r.resumeText.trim()).slice(0, 20);
   if (items.length === 0) return res.status(400).json({error: "no valid resumes"});
-  if (!signatureHeader) return send402(req, res);
+  if (!signatureHeader) return send402(req, res, undefined, MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
   let verified;
   try {
     const payload = parsePaymentSignature(signatureHeader);
