@@ -1,491 +1,248 @@
+# Nexa - Machine-Payable AI Services on BOT Chain
 
-# Nexa - Autonomous AI Payment Bridge on Stellar
+Nexa is an AI-service marketplace that agents pay for per call over HTTP `402 Payment Required` (x402 v2).
+A buyer agent sends a request, gets challenged with a payment requirement, signs a Permit2 authorization, settles USDT atomically on BOT Chain Bohr Testnet, receives the AI result, and can independently verify the result hash that was anchored on-chain.
 
-## Overview
+One real paid service runs end to end today: `resume-intelligence-v1` (candidate/resume intelligence audit).
 
-[**Nexa**](https://nexa-ai-bridge.vercel.app/) demonstrates how **Stellar becomes the autonomous payment infrastructure for the AI agent economy**. Built for the [Agents on Stellar](https://stellar.org) hackathon, Nexa uses the **Machine Payments Protocol (MPP)** to let AI agents autonomously pay USDC or XLM on Stellar to access decentralized AI reasoning - no human intervention, no API keys, no subscriptions.
+Everything in this repository was verified against BOT Chain Bohr Testnet (chain id `968`).
+Nothing is mocked in the payment path: the settlement transaction, the receipt transaction, and the receipt lookup are real on-chain calls.
 
-<img width="1646" height="828" alt="11 04 2026_16 05 31_REC" src="https://github.com/user-attachments/assets/53e5e13a-38ca-44f1-a0d7-88cd6e0ec881" />
+## Payment protocol
 
-The concept: **an AI agent sends an HTTP request, Stellar handles the payment, and the results are attested back on Stellar.** The entire lifecycle: payment, execution, and proof, is anchored on the Stellar ledger.
+The server is the source of truth for the protocol, implemented in `src/botX402.mjs`.
 
-### Stellar-Native Features
+1. `POST /api/audit` without payment returns `402` with a `PAYMENT-REQUIRED` header (base64url JSON: `x402Version`, `accepts[]`, `extensions`).
+2. The client signs an EIP-712 `PermitWitnessTransferFrom` message against the canonical Permit2 domain (`chainId 968`) for the exact price in atomic tUSDT units.
+3. The client retries with a `PAYMENT-SIGNATURE` header (base64url JSON: `x402Version`, `resource`, `accepted`, `payload.signature`, `payload.permit2Authorization`).
+4. The server verifies the typed-data signature, the payer balance, and the token allowance, then settles through the x402 exact-token Permit2 settlement proxy on BOT Chain.
+5. Only after settlement succeeds does the AI service execute.
+6. The result hash is recorded in `NexaReceiptRegistry` on-chain, and the response returns `PAYMENT-RESPONSE` (settlement JSON) plus the receipt transaction.
 
-| Feature | Stellar Integration |
-|---|---|
-|  **Machine Payments Protocol (MPP)** | First real-world implementation of Stellar's `@stellar/mpp` standard for autonomous agent payments via HTTP `402 Payment Required`. |
-|  **Dual Currency (USDC + XLM)** | Supports both Soroban SAC USDC and native XLM payments - maximum flexibility within the Stellar ecosystem. |
-|  **Zero Gas USDC** | The bridge sponsors XLM network fees for USDC payments. Agents pay only the dollar amount, with zero gas friction. |
-|  **On-Chain Attestation** | Every audit result is SHA-256 hashed and anchored on Stellar via `Memo.hash`, creating an immutable, independently verifiable proof. |
-|  **Freighter Wallet** | Native Stellar wallet integration for seamless UX. |
-|  **Trustline Pre-flight** | Intelligent detection of missing USDC trustlines before payment, with one-click XLM fallback. |
-|  **Audit Verification** | Anyone can paste a Stellar attestation hash and independently verify any audit result at [`/verify`](https://nexa-ai-bridge.vercel.app/verify). |
-|  **Live Audit History** | Real-time feed of all audits with clickable Stellar Explorer links at [`/history`](https://nexa-ai-bridge.vercel.app/history). |
-|  **PDF Certificates** | Downloadable audit certificates with links to Stellar payment and attestation transactions. |
-|  **Bridge Analytics** | Live production stats (total volume, success rate, consensus time) on the landing page. |
-|  **Triple-Verified** | Every audit produces three onchain proofs: Stellar USDC payment, Stellar SHA-256 attestation, and AI consensus transaction. |
+Replay protection comes from Permit2 nonces enforced on-chain: an already-used payload is rejected with `409 duplicate_payment` from the in-memory cache during runtime, and with a settlement revert (`402 settlement_failed`) after a restart.
 
----
+All monetary values are integers in atomic units (`tUSDT` has 6 decimals), never floating point.
 
-## Quick Start
+## Architecture
+
+```text
+buyer agent (scripts/customer-agent-demo.mjs or frontend src/hooks/useX402Bot.ts)
+  -> POST /api/audit                 x402 challenge / signed payment / result
+Express server (src/server.mjs)
+  |- src/botX402.mjs                402 headers, Permit2 witness verify, settlement
+  |- src/aiAdapter.mjs              runAudit() -> llm (default) | genlayer (preserved)
+  |- src/upstreamX402.mjs           paid upstream LLM call (EIP-3009, Base USDC)
+  |- src/receipts.mjs               record + read on-chain receipts
+  |- src/serviceRegistry.mjs        registered services + prices
+  |- src/botConfig.mjs              chain / token / Permit2 / proxy / registry config
+BOT Chain Bohr Testnet (chain id 968, RPC https://rpc.bohr.life)
+  |- tUSDT 0x75edC9335175Fc0552D51D48439F229c10420fe3 (6 decimals, not EIP-3009)
+  |- Permit2 0x000000000022D473030F116dDEE9F6B43aC78BA3 (canonical, witness path)
+  |- x402 exact Permit2 proxy 0x402085c248EeA27D92E8b30b2C58ed07f9E20001
+  |- NexaServiceRegistry 0x6A2C234080Da1329b0418E4d5Dc34b2004D464bF
+  |- NexaReceiptRegistry 0xC37C0a8988BB174f2a9b199b8B8f0Fb51f5c848D
+frontend (auditgen-core/, Vite + React + TS, strict + strictNullChecks)
+```
+
+### AI adapter
+
+`src/aiAdapter.mjs` exposes one function, `runAudit()`.
+The default adapter is `llm`, which performs a real paid upstream LLM call through `src/upstreamX402.mjs` (EIP-3009 `TransferWithAuthorization` on Base, USDC).
+The GenLayer adapter is preserved behind `NEXA_AI_ADAPTER=genlayer`, but GenLayer is not operational in this environment: the configured GenLayer contract has no deployed code, so it is not used.
+Set `NEXA_AI_ADAPTER=llm` (default) for the working path.
+
+## Contracts
+
+Both contracts are Solidity 0.8.24, built with Foundry (`forge build` clean), and deployed to Bohr Testnet by `0x3F5b96A494061F7338Da529e3047809Ac6a7FB84`.
+
+| Contract | Address | Deploy transaction |
+| --- | --- | --- |
+| `NexaServiceRegistry` | `0x6A2C234080Da1329b0418E4d5Dc34b2004D464bF` | `0xff01fc7ea42255b9ce35bf858deb0a2dcc809f84b5123a7696aa06a3dcdbd618` |
+| `NexaReceiptRegistry` | `0xC37C0a8988BB174f2a9b199b8B8f0Fb51f5c848D` | `0x10c4b2c9868d366b74f1b8be253d519cba9fbf1ed62c05bf90169ef7f5c7b8f2` (block `25883956`) |
+
+Registered service on `NexaServiceRegistry`:
+
+| Field | Value |
+| --- | --- |
+| service id | `resume-intelligence-v1` |
+| endpoint | `POST /api/audit` (endpoint hash `0x0ef2aa3a...47cf0e606`) |
+| provider / fee recipient | `0x772c86be44eAF536df1B5f8924417acCC6bB4028` |
+| price | `100000` atomic tUSDT = `0.10 tUSDT` |
+| registration transaction | `0x42cfcc36602001792522af58b7e902dc68b56b7df675d52706bbfd9301e1e8db` |
+
+Settlement infrastructure used by the server (not written by this repo):
+
+| Role | Address |
+| --- | --- |
+| tUSDT (6 decimals) | `0x75edC9335175Fc0552D51D48439F229c10420fe3` |
+| canonical Permit2 | `0x000000000022D473030F116dDEE9F6B43aC78BA3` |
+| x402 exact-token Permit2 settlement proxy | `0x402085c248EeA27D92E8b30b2C58ed07f9E20001` |
+
+## Verified end-to-end runs
+
+All transactions below are real Bohr Testnet transactions, independently verifiable at `https://scan.bohr.life/tx/<hash>`.
+
+| Payment (settlement) transaction | Receipt transaction | Result |
+| --- | --- | --- |
+| `0x5a9ad9ac88f62793a41cf67d0f7cc32ddb8d542f402b818f710c4e2929c11c44` | `0x9720dd6ab02d350b23a28385ae2e49ade0a6cc0d81b60bcf9beeab8af0efee02` | HTTP 200, `PARTIAL_FIT` |
+| `0xa37f1b9f44b7c620673d2cbb7d63b0090017fcf51bc1ed31a86b6ae11c9ddfe6` | `0xc713910294661f2d80cc7a4dd95c7d64f0f0013a9d1137d2aecce925a3094911` | HTTP 200, `PARTIAL_FIT` |
+| `0x19d20a9172a2d43004453f8cb8e51b84d377125b28a359485985c3f458b9d0d8` | `0xfad52d8f9e3ca487329f5f57a0fe327c518fdba9e83a4ff0da7d62d5f5ca812e` | HTTP 200, `PARTIAL_FIT` |
+
+Settlement transactions additionally emit the x402 proxy settlement event and a standard `tUSDT` transfer log to the configured payee.
+Receipt transactions emit `PaymentReceiptRecorded(bytes32 indexed paymentId, bytes32 indexed serviceId, address indexed payer, address provider, address asset, uint256 amount, bytes32 resultHash)`.
+
+Negative-path verification (all asserted by `npm run test:x402`):
+
+| Case | Expected | Observed |
+| --- | --- | --- |
+| no payment | `402` | `402` with `PAYMENT-REQUIRED` |
+| tampered amount | `402 payment_amount_mismatch` | confirmed |
+| valid payment | `200` | `200` with `PAYMENT-RESPONSE` |
+| immediate replay | `409 duplicate_payment` | `409` |
+| replay after server restart | `402 settlement_failed` | `402` (Permit2 nonce revert `0x756688fe`) |
+
+## Quick start
 
 ### Prerequisites
 
-- **Node.js** ≥ 20
-- **npm** or **bun**
-- [**Freighter Wallet**](https://freighter.app) browser extension (for the frontend)
-- Stellar Testnet USDC & XLM
+- Node.js 20+
+- a funded Bohr Testnet account (tUSDT for the audit price plus a little tBOT for gas)
+- optional: Foundry, for rebuilding the contracts
+- optional: an injected EVM wallet in the browser, for the frontend payment flow
 
-### 1. Clone & Install
+### 1. Install
 
 ```bash
 git clone https://github.com/mrnetwork0001/Nexa.git
 cd Nexa
-
-# Install backend dependencies
 npm install
-
-# Install frontend dependencies
-cd auditgen-core
-npm install
-cd ..
+cd auditgen-core && npm install && cd ..
 ```
 
-### 2. Configure Environment
+### 2. Configure
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your keys:
+Required values:
 
-```env
-# ─── Stellar Testnet Collection Account ───
-STELLAR_SECRET_KEY=S...your_stellar_secret_key
-STELLAR_PUBLIC_KEY=G...your_stellar_public_key
+| Variable | Meaning |
+| --- | --- |
+| `BOT_RPC_URL`, `BOT_CHAIN_ID`, `BOT_EXPLORER_URL` | defaults already point at Bohr Testnet |
+| `BOT_USDT_ADDRESS` | tUSDT token, 6 decimals |
+| `BOT_PERMIT2_ADDRESS`, `BOT_EXACT_PERMIT2_PROXY` | Permit2 and the x402 settlement proxy |
+| `NEXA_PAY_TO_ADDRESS` | address that receives the service fees |
+| `NEXA_FACILITATOR_PRIVATE_KEY` | server-side key used only to pay settlement gas |
+| `NEXA_RECEIPT_SIGNER_PRIVATE_KEY` | server-side key that writes receipts to `NexaReceiptRegistry` |
+| `NEXA_AUDIT_PRICE_ATOMIC` | price in atomic tUSDT (`100000` = `0.10`) |
+| `NEXA_SERVICE_ID` | must match a service registered in `NexaServiceRegistry` |
+| `NEXA_RECEIPT_REGISTRY_ADDRESS` | `0xC37C0a8988BB174f2a9b199b8B8f0Fb51f5c848D` |
+| `NEXA_UPSTREAM_*` | upstream paid LLM endpoint, asset and key |
 
-# ─── GenLayer ───
-GENLAYER_PRIVATE_KEY=0x...your_genlayer_private_key
-GENLAYER_ADDRESS=0x...your_genlayer_address
-GENLAYER_RPC_URL=https://studio.genlayer.com/api
-GENLAYER_CONTRACT_ADDRESS=0x9CE0d2626753e4C7729C70feeB41eAaB8Ecc189b
+Keep `.env` out of version control (it is gitignored).
+Never commit private keys, seeds, or API keys.
 
-# ─── Server ───
-PORT=3402
-```
-
-> **Need keys?** Run `npm run generate:wallet` to generate a fresh Stellar keypair, or `node scripts/generate-genlayer-key.mjs` for a GenLayer account.
-
-### 3. Start the Bridge Server
+### 3. Run the server
 
 ```bash
 npm start
-# or for hot-reload during development:
-npm run dev
+# Nexa BOT service ready on 3402; payTo=0x772c...; price=100000 atomic tUSDT
+# Nexa BOT bridge listening
 ```
 
-You should see:
+Health check: `curl http://localhost:3402/health`
 
-```
-🛸 Nexa Bridge Server is live!
-   Endpoint: POST http://localhost:3402/api/audit
-   Price   : 1.00 USDC (Stellar Testnet)
-   Attestation: On-chain SHA-256 anchoring enabled
+### 4. Run the real paid end-to-end demo
+
+```bash
+NEXA_AGENT_PRIVATE_KEY=0x... NEXA_BASE_URL=http://localhost:3402 npm run demo:agent
 ```
 
-### 4. Start the Frontend
+The demo performs the whole loop: `402` challenge, Permit2 signature, on-chain settlement, AI execution, on-chain receipt, HTTP `200`.
+It prints the settlement transaction hash and the receipt transaction hash.
+
+### 5. Run the verification suite
+
+```bash
+npm run test:bot        # chain, token, decimals, Permit2 presence
+NEXA_AGENT_PRIVATE_KEY=0x... npm run test:x402   # negative + replay paths
+node scripts/test-upstream.mjs   # real paid upstream LLM call
+```
+
+### 6. Frontend
 
 ```bash
 cd auditgen-core
 npm run dev
 ```
 
-Open **http://localhost:8080** in your browser.
+The UI pays through the same `/api/audit` protocol from the browser (see `src/hooks/useX402Bot.ts`).
+Configure `VITE_API_BASE_URL` (default `http://localhost:3402`) in `auditgen-core/.env.example`.
 
-### 5. Run Your First Audit
+## HTTP API
 
-1. Click **Connect Wallet** → authorize Freighter
-2. Navigate to `/audit`
-3. Fill in the job title and paste a resume
-4. Click **Run Decentralized AI Audit**
-5. Sign the 1 USDC payment in Freighter
-6. Wait for GenLayer consensus (~30-60s)
-7. View your onchain audit results with **OnChain Verification** panel! 
-8. Click any verification link to independently verify on [Stellar Expert](https://stellar.expert) or [GenLayer Explorer](https://explorer-studio.genlayer.com)
+| Endpoint | Auth | Returns |
+| --- | --- | --- |
+| `POST /api/audit` | x402 payment (Permit2 witness) | AI audit result, `PAYMENT-RESPONSE` header, receipt transaction |
+| `GET /api/services` | none | registered services, price, payee, x402 acceptances |
+| `GET /api/audits` | none | recent audit ledger records (newest first, max 200, stored in `data/audits.json`) |
+| `GET /api/verify/:paymentId` | none | local record plus on-chain receipt and a `hashMatches` integrity flag |
+| `GET /api/receipt/:paymentId` | none | on-chain receipt read from `NexaReceiptRegistry` |
+| `GET /api/stats` | none | aggregate metrics derived from the audit ledger |
+| `POST /api/waitlist` | none | stores an email in `data/waitlist.json` (deduplicated) |
+| `GET /health` | none | liveness |
 
----
+Request input is validated (with `zod`) before any payment is accepted, so an invalid payload can never take funds.
 
-## Architecture
+## Project structure
 
 ```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                              NEXA BRIDGE                               │
-│                                                                        │
-│ ┌──────────────┐ ┌──────────────┐    ┌──────────────┐ ┌──────────────┐ │
-│ │  Autonomous  │ │   Frontend   │────▶ Bridge API   │─▶  GenLayer    │ │
-│ │  AI Agent    │ │ (React/Vite) │    │  (Express)   │ │ (StudioNet)  │ │
-│ └───┬──────────┘ └──────┬───────┘    └──────┬───────┘ └──────┬───────┘ │
-│     │ (Headless)        │                   │                │         │
-│     │                   │                   │(Saves Auth)    │         │
-│     │                   │ ┌─────────────────┤                │         │
-│     ▼                   ▼ ▼                 ▼                ▼         │
-│ ┌──────────────┐ ┌──────────────┐    ┌──────────────┐ ┌──────────────┐ │
-│ │  Agent       │ │  Freighter   │    │  Supabase    │ │   5 AI       │ │
-│ │  Keystore    │ │  Wallet      │    │  (PostgreSQL)│ │  Validators  │ │
-│ └──────────────┘ └──────────────┘    └──────────────┘ └──────────────┘ │
-│                                             │                          │
-│                                             │ (Verifies Payment &      │
-│                                             │  Anchors Memo.hash)      │
-│                                             ▼                          │
-│                                      ┌──────────────┐                  │
-│                                      │   Stellar    │                  │
-│                                      │ Soroban RPC  │                  │
-│                                      └──────────────┘                  │
-└────────────────────────────────────────────────────────────────────────┘
+contracts/                  Foundry contracts (ServiceRegistry, ReceiptRegistry)
+scripts/customer-agent-demo.mjs   real paid end-to-end agent run
+scripts/test-x402-negative.mjs    negative + replay assertions
+scripts/test-bot.mjs              chain/token/Permit2 sanity checks
+scripts/test-upstream.mjs         upstream paid LLM check
+src/                          Express server, x402, adapters, receipts
+auditgen-core/                Vite + React frontend
+api/index.mjs                 Vercel serverless entry (exports the Express app)
+data/                         local audit ledger + waitlist (gitignored)
 ```
 
-### Data Flow
+## Verification
 
-```mermaid
-sequenceDiagram
-    participant User as 👤 User / Agent
-    participant Frontend as 🖥 Frontend
-    participant Bridge as 🛸 Nexa Bridge
-    participant Stellar as ⭐ Stellar (Soroban)
-    participant GenLayer as 🧠 GenLayer
+Anyone can verify a result without trusting this repository:
 
-    User->>Frontend: Submit resume + job details
-    Frontend->>Bridge: POST /api/audit (no auth)
-    Bridge-->>Frontend: 402 Payment Required + MPP Challenge
-    Frontend->>Frontend: Build Soroban SAC transfer (1 USDC)
-    Frontend->>User: Prompt Freighter to sign
-    User->>Frontend: Sign transaction
-    Frontend->>Bridge: POST /api/audit (Authorization: Payment ...)
-    Bridge->>Stellar: Verify & settle Soroban tx
-    Stellar-->>Bridge: Payment confirmed ✅ (stellarPaymentHash)
-    Bridge->>GenLayer: submit_screening(job, resume)
-    GenLayer->>GenLayer: 5 AI validators reach consensus
-    GenLayer-->>Bridge: Finalized audit results
-    Bridge->>Bridge: SHA-256(screeningId + verdict + score)
-    Bridge->>Stellar: Anchor attestation (Memo.hash)
-    Stellar-->>Bridge: Attestation confirmed ✅ (stellarAttestationHash)
-    Bridge-->>Frontend: results + stellarPaymentHash + stellarAttestationHash
-    Frontend->>User: Display results + On-Chain Verification panel 🎉
-```
+1. Take the `paymentId` from a response (or from `GET /api/audits`).
+2. Call `GET /api/receipt/:paymentId`, or read `NexaReceiptRegistry` directly on-chain.
+3. Compare the on-chain `resultHash` with the hash of the returned result payload (or with the local record: `hashMatches` in `GET /api/verify/:paymentId`).
+4. Open the settlement and receipt transactions in `https://scan.bohr.life/`.
 
----
+## Security notes
 
-## How It Works
+- Input validation happens before payment acceptance.
+- Payment verification checks EIP-712 typed data against the canonical Permit2 domain for chain `968`, plus token balance and allowance.
+- Settlement is performed by an audited x402 settlement proxy, not by ad-hoc transfer logic.
+- Replay is blocked by the in-memory payment cache at runtime and by Permit2 nonces on-chain after a restart.
+- Gas keys (`NEXA_FACILITATOR_PRIVATE_KEY`) and the receipt signer key are server-side only; buyers never share keys.
+- The upstream paid LLM call is only made after settlement succeeds, and a `503` from upstream does not charge the buyer.
 
-### The MPP (Machine Payments Protocol) Handshake
+## Known limitations
 
-Nexa implements [Stellar's MPP specification](https://paymentauth.org) for agent-native payments. The protocol uses HTTP `402 Payment Required` to negotiate payments before granting access to protected resources.
+- The audit ledger and waitlist are local JSON files, not a database: they are per-instance and gitignored.
+- `GET /api/audits`, `/api/verify`, `/api/receipt`, `/api/stats` are unauthenticated public reads.
+- GenLayer is preserved as an adapter but is not operational here (its configured contract has no code).
+- `NexaReceiptRegistry` records one receipt per `paymentId` by design; a second receipt for the same id reverts.
+- Browser wallet payments were not exercised in a real browser in this environment; the same protocol was verified with the scripted agent.
+- Bulk screening in the UI is a waitlisted preview, not a live feature.
+- The upstream LLM endpoint can return `503 source_unavailable`; the client retries and never charges on upstream failure.
 
-**Step-by-step:**
+## Deploy
 
-1. **Initial Request** - The client sends a `POST /api/audit` without authentication.
-2. **402 Challenge** - The server responds with `402` and a `WWW-Authenticate: Payment ...` header containing the challenge (amount, currency, recipient).
-3. **Build Transaction** - The client builds a Soroban SAC `transfer` invocation for 1 USDC.
-4. **Simulate & Prepare** - The transaction is simulated on Soroban RPC to attach resource metadata.
-5. **Sign** - The user signs the prepared transaction via Freighter wallet.
-6. **Submit Credential** - The signed XDR is wrapped in an MPP credential (`Authorization: Payment <base64url>`) and sent back.
-7. **Verify & Settle** - The server verifies the Soroban invocation. For USDC payments, the server **sponsors the network fee** using its own account as a fee-payer, ensuring the user pays zero gas.
-8. **Execute Audit** - With payment confirmed, the server submits the audit job to GenLayer and waits for consensus.
-9. **Anchor Attestation** - After consensus, the server computes `SHA-256(screeningId | verdict | score | wallet)` and anchors it on Stellar as a `Memo.hash` transaction, creating an immutable onchain proof.
-10. **Return Proofs** - The response includes the Stellar payment tx hash, the Stellar attestation tx hash, the GenLayer consensus tx hash, and the raw attestation digest.
+`vercel.json` and `api/index.mjs` are unchanged in shape: the Express app is exported as the serverless function and the frontend builds to `auditgen-core/dist`.
+Set the environment variables from `.env.example` in the deployment target before deploying.
 
-### GenLayer AI Consensus
+## Legacy
 
-The bridge submits audit requests to a [GenLayer Intelligent Contract](https://genlayer.com) deployed on StudioNet. The contract:
-
-- Receives the job title, description, required skills, and resume text
-- Is processed by **5 independent AI validators** using different LLMs
-- Validators independently analyze the candidate and produce scores
-- The **Equivalence Principle** ensures consensus across validators
-- Results are finalized onchain with a unique `AUDIT-xxx` screening ID
-
-**Audit results include:**
-- `match_score` - 0-100 fit score
-- `verdict` - Strong Match / Partial Match / Weak Match
-- `seniority` - Junior / Mid-Level / Senior / Lead
-- `matched_skills` - Skills found in the resume
-- `missing_skills` - Required skills not found
-- `explanation` - Detailed AI analysis
-- `confidence` - Consensus confidence level
-- `stellarPaymentHash` - Stellar tx hash of the USDC payment
-- `stellarAttestationHash` - Stellar tx hash of the on-chain attestation
-- `attestationDigest` - Raw SHA-256 hex digest anchored in Memo.hash
-
-### OnChain Attestation
-
-After every successful audit, the bridge anchors a cryptographic proof on Stellar:
-
-```
-SHA-256( "nexa:audit:{screeningId}|{verdict}|{matchScore}|{walletAddress}" )
-```
-
-This digest is submitted as a `Memo.hash` on a self-payment transaction (0.0000001 XLM). The result is a verifiable, immutable link between the Stellar payment and the AI audit outcome - visible to anyone on [Stellar Expert](https://stellar.expert/explorer/testnet).
-
-**Why this matters:**
-- **Verifiable** - Anyone can recompute the SHA-256 from the audit data and verify it matches the Memo.hash on Stellar
-- **Immutable** - Once anchored, the attestation cannot be altered or deleted
-- **Crosschain proof** - Ties the Stellar payment to the GenLayer consensus result
-
-The UI displays an **OnChain Verification** panel with clickable links to all three on-chain proofs:
-
-| Proof | Explorer | What it shows |
-|---|---|---|
-| USDC Payment | Stellar Expert | Soroban SAC `transfer` of 1 USDC |
-| Attestation | Stellar Expert | Self-payment with `Memo.hash` = SHA-256 digest |
-| AI Consensus | GenLayer Explorer | 5-validator consensus finalization |
-
----
-
-## Project Structure
-
-```
-Nexa/
-├── src/                          # Backend (Bridge Server)
-│   ├── server.mjs                #   Express server, MPP middleware, attestation
-│   ├── genlayer.mjs              #   GenLayer client & result parsing
-│   └── auditLedger.mjs           #   Audit history persistence
-│
-├── auditgen-core/                # Frontend (React + Vite + Tailwind)
-│   ├── src/
-│   │   ├── App.tsx               #   Root component with routing
-│   │   ├── pages/
-│   │   │   ├── Landing.tsx       #   Landing with analytics dashboard
-│   │   │   ├── Audit.tsx         #   Audit form + results + certificate
-│   │   │   ├── History.tsx       #   Live audit history feed
-│   │   │   ├── Verify.tsx        #   Onchain verification search
-│   │   │   ├── Docs.tsx          #   Protocol documentation
-│   │   │   └── NotFound.tsx      #   404 page
-│   │   ├── components/
-│   │   │   ├── Navbar.tsx        #   Navigation (Home/Audit/History/Verify/Docs)
-│   │   │   ├── BridgeAnalytics.tsx # Live bridge stats with animated counters
-│   │   │   ├── BulkAuditView.tsx #   Bulk registry (coming soon + waitlist)
-│   │   │   ├── WalletModal.tsx   #   Freighter wallet connection
-│   │   │   ├── AuditResults.tsx  #   Audit results display
-│   │   │   ├── ConsensusLoader.tsx   # Consensus loading animation
-│   │   │   └── ScoreRing.tsx     #   Circular score visualization
-│   │   ├── hooks/
-│   │   │   ├── useMpp.ts        #   MPP payment handshake (core Stellar logic)
-│   │   │   ├── useWallet.tsx     #   Freighter wallet context
-│   │   │   └── use-theme.tsx     #   Theme toggle
-│   │   └── utils/
-│   │       └── generateCertificate.ts # PDF certificate generator
-│   └── index.html
-│
-├── scripts/                      # Utility Scripts
-│   ├── customer-agent-demo.mjs   #   Full agent-mode demo (no UI)
-│   ├── setup-usdc.mjs            #   Fund testnet USDC trustline
-│   ├── setup-agent.mjs           #   Bootstrap agent wallet
-│   └── generate-wallet.mjs       #   Generate Stellar keypair
-│
-├── .env.example                  # Environment template
-└── package.json                  # Dependencies & scripts
-```
-
----
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `STELLAR_SECRET_KEY` | ✅ | Stellar secret key for the collection account (verifies & settles payments) |
-| `STELLAR_PUBLIC_KEY` | ✅ | Stellar public key - recipient of USDC payments |
-| `GENLAYER_PRIVATE_KEY` | ✅ | GenLayer private key for submitting audit transactions |
-| `GENLAYER_ADDRESS` | ✅ | GenLayer wallet address |
-| `GENLAYER_RPC_URL` | ✅ | GenLayer StudioNet RPC endpoint |
-| `GENLAYER_CONTRACT_ADDRESS` | ✅ | Deployed Intelligent Contract address |
-| `PORT` | ❌ | Server port (default: `3402`) |
-| `SUPABASE_URL` | ✅ | Supabase project URL for persistent audit ledger |
-| `SUPABASE_ANON_KEY` | ✅ | Supabase anon/public key (read/insert) |
-
-### Funding Testnet USDC
-
-To use the app, your Freighter wallet needs testnet USDC:
-
-```bash
-# 1. Fund your Stellar account with testnet XLM
-#    Visit: https://laboratory.stellar.org/#account-creator?network=test
-
-# 2. Add USDC trustline and get test tokens
-node scripts/setup-usdc.mjs
-
-# 3. Or send USDC from the bridge wallet to any user
-node scripts/send-usdc-to-user.mjs <DESTINATION_PUBLIC_KEY>
-```
-
----
-
-## Scripts
-
-### Backend
-
-| Command | Description |
-|---|---|
-| `npm start` | Start the bridge server |
-| `npm run dev` | Start with hot-reload (development) |
-| `npm run generate:wallet` | Generate a new Stellar keypair |
-| `npm run test:stellar` | Test Stellar connectivity |
-
-### Frontend
-
-| Command | Description |
-|---|---|
-| `npm run dev` | Start Vite dev server (port 8080) |
-| `npm run build` | Production build |
-| `npm run preview` | Preview production build |
-| `npm run test` | Run unit tests with Vitest |
-| `npm run lint` | Lint with ESLint |
-
-### Utility Scripts
-
-| Script | Description |
-|---|---|
-| `scripts/customer-agent-demo.mjs` | End-to-end agent demo - pays and audits without UI |
-| `scripts/full-system-test.mjs` | Full integration test suite |
-| `scripts/setup-usdc.mjs` | Create USDC trustline on testnet |
-| `scripts/setup-agent.mjs` | Bootstrap an agent wallet with funded USDC |
-
----
-
-## Tech Stack
-
-### Backend
-| Technology | Purpose |
-|---|---|
-| [Express 5](https://expressjs.com) | HTTP server |
-| [@stellar/mpp](https://github.com/stellar/stellar-mpp-sdk) | MPP server-side charge verification & settlement |
-| [mppx](https://github.com/wevm/mppx) | Machine Payments Protocol core library |
-| [@stellar/stellar-sdk](https://github.com/stellar/js-stellar-sdk) | Stellar/Soroban interaction |
-| [genlayer-js](https://github.com/genlayer/genlayer-js) | GenLayer smart contract client |
-
-### Frontend
-| Technology | Purpose |
-|---|---|
-| [React 18](https://react.dev) | UI framework |
-| [Vite 5](https://vitejs.dev) | Build tool & dev server |
-| [Tailwind CSS](https://tailwindcss.com) | Utility-first styling |
-| [shadcn/ui](https://ui.shadcn.com) | UI component library |
-| [@stellar/freighter-api](https://www.freighter.app) | Stellar wallet integration |
-| [mppx](https://github.com/wevm/mppx) | Client-side credential serialization |
-| [Lucide React](https://lucide.dev) | Icon library |
-
-### Blockchains
-| Chain | Role |
-|---|---|
-| **Stellar Testnet** (Soroban) | Payment rail - USDC and XLM transfers via SAC contracts |
-| **GenLayer StudioNet** | AI execution layer - consensus-driven resume audits |
-
-### Facilitator Compatibility
-| Service | Status |
-|---|---|
-| [OpenZeppelin x402 Facilitator](https://developers.stellar.org/docs/build/agentic-payments/x402/built-on-stellar) | ✅ Compatible - fee-sponsored settlement ready |
-| [Built on Stellar](https://channels.openzeppelin.com/x402/testnet) | ✅ Testnet & Mainnet endpoints supported |
-
----
-
-## Security Considerations
-
-- **HMAC-bound Challenges** - The MPP challenge ID is an HMAC-SHA256 over all challenge parameters, preventing tampering and replay attacks.
-- **Canonical JSON** - Credential serialization uses deterministic JSON canonicalization (`Json.canonicalize` from `ox`) to ensure byte-exact HMAC matching.
-- **DID Verification** - The `did:pkh:stellar:testnet:<pubkey>` credential source is verified against the transaction's `from` address to prevent hash-theft attacks.
-- **Soroban Simulation** - Transactions are simulated before settlement to verify transfer events match expected parameters.
-- **OnChain Attestations** - Audit results are SHA-256 hashed and anchored on Stellar via `Memo.hash`, creating tamper-proof provenance linking payments to outcomes.
-- **Challenge Expiry** - MPP challenges expire after 5 minutes, preventing stale replay attacks.
-- **Secret Keys** - Never commit `.env` to version control. The `.gitignore` is pre-configured.
-
----
-
-## Roadmap
-
-- [x] MPP payment handshake with Freighter wallet
-- [x] Soroban SAC transfer integration (USDC + XLM)
-- [x] Multi-currency support with intelligent trustline detection
-- [x] Fee-sponsored USDC settlement (Zero Gas for users)
-- [x] On-chain SHA-256 attestation anchoring on Stellar (`Memo.hash`)
-- [x] Triple-verified proof panel (Stellar payment + Stellar attestation + AI consensus)
-- [x] Agent-to-agent autonomous demo (`customer-agent-demo.mjs`)
-- [x] Audit Verification Page - verify any audit by Stellar/GenLayer hash
-- [x] Live Audit History dashboard with Stellar Explorer links
-- [x] Bridge Analytics dashboard with live production metrics
-- [x] Downloadable PDF Audit Certificates with onchain proof links
-- [x] Email waitlist for Bulk Registry
-- [x] OpenZeppelin x402 Facilitator compatibility
-- [ ] Batch consensus for bulk audits
-- [ ] Payment channels for high-frequency agents
-- [ ] Mainnet deployment
-
----
-
-## Mainnet Production Deployment
-
-Nexa is **built on testnet but designed for mainnet**. Below is a production deployment guide.
-
-### Network Configuration Changes
-
-| Parameter | Testnet (Current) | Mainnet (Production) |
-|---|---|---|
-| Network Passphrase | `Networks.TESTNET` | `Networks.PUBLIC` |
-| Horizon URL | `https://horizon-testnet.stellar.org` | `https://horizon.stellar.org` |
-| USDC SAC Contract | `USDC_SAC_TESTNET` | `USDC_SAC_MAINNET` (`CBIELTK...`) |
-| XLM SAC Contract | `XLM_SAC_TESTNET` | `XLM_SAC_MAINNET` (`CAS3J7G...`) |
-| MPP Network ID | `stellar:testnet` | `stellar:pubnet` |
-| Facilitator URL | `https://channels.openzeppelin.com/x402/testnet` | `https://channels.openzeppelin.com/x402` |
-
-### Security Hardening for Production
-
-- **Rate Limiting** - Add `express-rate-limit` middleware (e.g., 10 audits/minute per IP) to prevent abuse.
-- **HMAC Secret Rotation** - Rotate the `STELLAR_SECRET_KEY` periodically and use environment-specific secrets.
-- **CORS Lockdown** - Restrict `cors()` origins to your production domain only.
-- **HTTPS Enforcement** - Deploy behind a reverse proxy (e.g., Nginx, Cloudflare) with TLS termination.
-- **Audit Logging** - Persist all transaction hashes, attestation digests, and audit results to a database for compliance.
-- **Input Validation** - Add schema validation (e.g., `zod`) for all request bodies to prevent injection attacks.
-
-### Operational Cost Estimate
-
-| Operation | Cost per Audit | Notes |
-|---|---|---|
-| Agent Payment (Revenue) | +1.00 USDC or +10 XLM | Collected by the bridge |
-| Attestation Tx (Self-payment) | ~0.00001 XLM | Network fee for `Memo.hash` anchoring |
-| Facilitator Submission | **Free** | Sponsored by OpenZeppelin Built on Stellar |
-| GenLayer Consensus | Gasless | `submit_screening` + `get_screening` |
-
-**Net margin per audit**: ~$0.99 USDC (at current prices)
-
-### Go-to-Market Strategy
-
-1. **Phase 1 - Testnet (Current)**: Open beta for developers and agents. Gather feedback.
-2. **Phase 2 - Mainnet Launch**: Deploy with real USDC. Target recruiting agencies and HR SaaS platforms.
-3. **Phase 3 - A2A Marketplace**: Open a registry where agents can discover Nexa as a paid tool.
-4. **Phase 4 - Enterprise SDK**: Ship a verification SDK so third-party DApps can verify Nexa audit receipts.
-
----
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## Author
-
-**Built by** - [MrNetwork](https://x.com/encrypt_wizard), for the **Agents on Stellar** Hackathon 
-
-
+The original Stellar/MPP implementation was replaced by the BOT Chain x402 runtime.
+Legacy Stellar scripts and dependencies were removed in this migration; `GENLAYER_*` variables remain only for the preserved GenLayer adapter path.
