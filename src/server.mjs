@@ -234,13 +234,6 @@ try {
   if (process.env.NODE_ENV === "production") process.exitCode = 1;
 }
 
-export default app;
-
-if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
-  const server = app.listen(Number(process.env.PORT || 3402), () => console.log("Nexa BOT bridge listening"));
-  process.on("SIGINT", () => server.close(() => process.exit(0)));
-}
-
 app.post("/api/match", async (req, res) => {
   const resourceUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   const signatureHeader = req.header("PAYMENT-SIGNATURE");
@@ -318,3 +311,12 @@ app.post("/api/skills", async (req, res) => {
   try { await recordReceiptOnChain({paymentId: id, payer: verified.payer, provider: BOT_PAY_TO, asset: BOT_USDT_ADDRESS, amount: SKILLS_PRICE_ATOMIC, serviceId: SKILLS_SERVICE_ID, endpointHash: "", resultHash: outputHash, durationMs: 0}); } catch {}
   res.json({ok: true, serviceId: SKILLS_SERVICE_ID, paymentId: id, settlement, results: result});
 });
+
+
+export default app;
+
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+  const server = app.listen(Number(process.env.PORT || 3402), () => console.log("Nexa BOT bridge listening"));
+  process.on("SIGINT", () => server.close(() => process.exit(0)));
+}
+
