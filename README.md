@@ -116,7 +116,7 @@ Negative-path verification (all asserted by `npm run test:x402`):
 ### 1. Install
 
 ```bash
-git clone https://github.com/mrnetwork0001/Nexa.git
+git clone https://github.com/Saber1Y/Nexa.git
 cd Nexa
 npm install
 cd auditgen-core && npm install && cd ..
