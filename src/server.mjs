@@ -61,7 +61,9 @@ function send402(req, res, error) {
   return res.status(402).json(body);
 }
 
-app.get("/health", (req, res) => res.json({status: "ok", product: "Nexa", network: "eip155:968", asset: BOT_USDT_ADDRESS, payTo: BOT_PAY_TO, priceAtomic: AUDIT_PRICE_ATOMIC}));
+const health = (req, res) => res.json({status: "ok", product: "Nexa", network: "eip155:968", asset: BOT_USDT_ADDRESS, payTo: BOT_PAY_TO, priceAtomic: AUDIT_PRICE_ATOMIC});
+app.get("/health", health);
+app.get("/api/health", health);
 
 app.get("/api/services", (req, res) => res.json({x402Version: 2, services: listServices()}));
 

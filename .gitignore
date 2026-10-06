@@ -30,3 +30,5 @@ out/
 
 # Local audit ledger
 data/
+.vercel
+.env*
