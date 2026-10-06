@@ -57,7 +57,7 @@ const Landing = () => {
 
               <p className="text-sm md:text-base text-muted-foreground max-w-xl mb-10 leading-relaxed tracking-wide mx-auto md:mx-0">
                 <span style={{ color: "var(--neon-green)" }}>&gt;</span> The native payment infrastructure for{" "}
-                <span className="text-foreground font-bold">Stellar Agents</span>, anchored by decentralized AI consensus.
+                <span className="text-foreground font-bold">AI agents</span>, settled in tUSDT on BOT Chain via x402 + Permit2.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
@@ -107,20 +107,20 @@ const Landing = () => {
             {[
               {
                 icon: Cpu,
-                title: "Stellar Asset Rails",
-                description: "Native USDC & XLM micropayments via Soroban SAC. Fee-sponsored USDC transfers mean agents pay zero gas.",
+                title: "tUSDT Payment Rails",
+                description: "0.10 tUSDT micropayments via x402 + Permit2. One wallet signature settles each audit.",
                 neon: "var(--neon-green)",
               },
               {
                 icon: ShieldCheck,
                 title: "Triple-Verified Proof",
-                description: "Every audit anchors a SHA-256 digest on Stellar, a consensus artifact on GenLayer, and a USDC receipt.",
+                description: "Every audit ships a SHA-256 result hash, an AI consensus verdict, and an on-chain tUSDT payment receipt.",
                 neon: "var(--neon-cyan)",
               },
               {
                 icon: Globe,
                 title: "Chain Abstraction",
-                description: "Hold USDC or XLM on Stellar. Get AI results from GenLayer. Nexa abstracts multi-chain complexity.",
+                description: "Hold tUSDT on BOT Chain. Get AI results from the screening service. Nexa abstracts the payment flow.",
                 neon: "var(--neon-magenta)",
               },
             ].map((feature) => (
@@ -146,7 +146,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* ═══════ MPP 402 FLOW ═══════ */}
+      {/* ═══════ x402 FLOW ═══════ */}
       <section className="relative py-24 border-t" style={{ borderColor: "rgba(0,255,136,0.1)", background: "rgba(0,255,136,0.01)" }}>
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="text-center mb-16">
@@ -154,19 +154,19 @@ const Landing = () => {
               &gt; PROTOCOL_HANDSHAKE
             </p>
             <h2 className="text-3xl md:text-5xl font-black text-foreground font-display uppercase tracking-wider">
-              The <span className="gradient-text">MPP 402</span> Flow
+              The <span className="gradient-text">x402</span> Flow
             </h2>
             <p className="text-sm text-muted-foreground mt-4 max-w-2xl mx-auto tracking-wide">
-              Autonomous payment negotiation via HTTP 402 — AI agents pay without human intervention.
+              Autonomous payment negotiation via HTTP 402 - AI agents pay without human intervention.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { step: "01", icon: ShieldCheck, title: "Challenge", description: "Bridge issues 402 challenge with HMAC-bound ID." },
-              { step: "02", icon: Wallet, title: "Settle", description: "Agent signs 1 USDC or XLM Soroban transfer on Stellar." },
-              { step: "03", icon: BrainCircuit, title: "Audit", description: "5 GenLayer AI nodes reach consensus on the resume." },
-              { step: "04", icon: Award, title: "Anchor", description: "SHA-256 proof is anchored back on Stellar Memo." },
+              { step: "01", icon: ShieldCheck, title: "Challenge", description: "Service returns a 402 challenge with price, asset and pay-to terms." },
+              { step: "02", icon: Wallet, title: "Settle", description: "Agent signs an EIP-712 Permit2 authorization for 0.10 tUSDT." },
+              { step: "03", icon: BrainCircuit, title: "Audit", description: "AI validators screen the resume and reach a match verdict." },
+              { step: "04", icon: Award, title: "Anchor", description: "SHA-256 result hash is recorded with the payment receipt." },
             ].map((step, i) => (
               <div key={step.step} className="relative group">
                 <div className="cyber-card p-6 h-full bg-background/50">
@@ -208,7 +208,7 @@ const Landing = () => {
             {[
               { icon: Lock, title: "Trust Selection", description: "Agent reputation scoring via onchain attestation history. Each audit builds a verifiable trust graph." },
               { icon: Scale, title: "Built-in Arbitration", description: "GenLayer's Equivalence Principle provides consensus across 5 independent AI validators." },
-              { icon: Rocket, title: "Stellar-Scale Throughput", description: "5-second finality and sub-cent fees enable high-volume audit registries at scale." },
+              { icon: Rocket, title: "Micro-Payment Throughput", description: "Sub-cent fees and instant 402 settlement enable high-volume audit registries at scale." },
             ].map((feature) => (
               <div key={feature.title} className="cyber-card p-8 group hover:-translate-y-1 transition-all duration-200">
                 <div className="w-12 h-12 flex items-center justify-center mb-5 border" style={{ borderColor: "var(--neon-magenta)", boxShadow: "0 0 8px rgba(255,0,255,0.15)" }}>
@@ -222,9 +222,9 @@ const Landing = () => {
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             {[
-              { icon: Fuel, label: "Fee-Sponsored USDC", color: "var(--neon-green)" },
-              { icon: ShieldCheck, label: "OpenZeppelin Compatible", color: "var(--neon-cyan)" },
-              { icon: Globe, label: "Mainnet Ready", color: "var(--neon-magenta)" },
+              { icon: Fuel, label: "One-Signature tUSDT", color: "var(--neon-green)" },
+              { icon: ShieldCheck, label: "Permit2 + EIP-712", color: "var(--neon-cyan)" },
+              { icon: Globe, label: "BOT Chain Testnet", color: "var(--neon-magenta)" },
             ].map((badge) => (
               <span
                 key={badge.label}
@@ -246,7 +246,7 @@ const Landing = () => {
             <span className="animate-blink" style={{ color: "var(--neon-green)" }}>_</span>
           </h2>
           <p className="text-muted-foreground mb-10 text-sm tracking-wide">
-            Experience the future of autonomous value transfer on the Stellar network.
+            Experience the future of autonomous value transfer on BOT Chain.
           </p>
           <Button
             size="lg"
@@ -264,7 +264,7 @@ const Landing = () => {
       <footer className="border-t py-12" style={{ borderColor: "rgba(0,255,136,0.1)" }}>
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6 text-[10px] text-muted-foreground tracking-[0.15em] uppercase">
           <div>
-            <span style={{ color: "var(--neon-green)", opacity: 0.5 }}>&gt;</span> Nexa Bridge · Agents on Stellar
+            <span style={{ color: "var(--neon-green)", opacity: 0.5 }}>&gt;</span> Nexa Bridge · Agents on BOT Chain
           </div>
           <div>
             Created by{" "}
@@ -273,7 +273,7 @@ const Landing = () => {
             </a>
           </div>
           <div className="flex items-center gap-4">
-            <a href="https://stellar.org" target="_blank" className="hover:text-foreground transition-colors">Stellar</a>
+            <a href="https://scan.bohr.life" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">BOT Scan</a>
             <a href="https://genlayer.com" target="_blank" className="hover:text-foreground transition-colors">GenLayer</a>
           </div>
         </div>

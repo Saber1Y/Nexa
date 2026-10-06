@@ -20,12 +20,12 @@ const Docs = () => {
           {/* Header */}
           <div className="space-y-4 text-center md:text-left">
             <h1 className="text-4xl md:text-6xl font-black tracking-widest font-display uppercase">
-              <span className="gradient-text">Stellar-Powered</span>
+              <span className="gradient-text">x402-Powered</span>
               <br />
               <span className="text-foreground" style={{ fontSize: "0.7em" }}>AI Bridge</span>
             </h1>
             <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed tracking-wide">
-              <span style={{ color: "var(--neon-green)" }}>&gt;</span> Nexa turns Stellar into the autonomous payment infrastructure for AI agents. Pay with USDC or XLM, get decentralized AI consensus, and verify everything onchain.
+              <span style={{ color: "var(--neon-green)" }}>&gt;</span> Nexa turns BOT Chain into the autonomous payment infrastructure for AI agents. Pay 0.10 tUSDT via x402 + Permit2, get an AI screening verdict, and verify everything onchain.
             </p>
           </div>
 
@@ -45,7 +45,7 @@ const Docs = () => {
               </div>
               <div className="p-6 border-t border-border/50" style={{ background: "rgba(0,255,136,0.02)" }}>
                 <p className="text-[10px] text-muted-foreground leading-relaxed italic tracking-wide">
-                  <span style={{ color: "var(--neon-green)" }}>&gt;</span> Stellar serves as the autonomous payment and attestation layer. AI agents pay USDC/XLM via MPP, all results anchored on the Stellar ledger via Memo.hash.
+                  <span style={{ color: "var(--neon-green)" }}>&gt;</span> BOT Chain serves as the autonomous payment layer. AI agents pay tUSDT via x402 + Permit2, with an on-chain payment receipt and a signed result hash for every audit.
                 </p>
               </div>
             </div>
@@ -53,30 +53,30 @@ const Docs = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="text-sm font-display font-bold uppercase tracking-wider flex items-center gap-2">
-                  <Target className="w-4 h-4" style={{ color: "var(--neon-green)" }} /> Stellar as Payment Rail
+                  <Target className="w-4 h-4" style={{ color: "var(--neon-green)" }} /> BOT Chain as Payment Rail
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed tracking-wide">
-                  AI agents need <strong className="text-foreground">programmable, low-cost, instant payments</strong>. Stellar's Soroban smart contracts and the Machine Payments Protocol (MPP) make this possible — agents pay via HTTP <code style={{ color: "var(--neon-green)" }}>402 Payment Required</code>.
+                  AI agents need <strong className="text-foreground">programmable, low-cost, instant payments</strong>. The x402 protocol and Uniswap's Permit2 make this possible - agents pay via HTTP <code style={{ color: "var(--neon-green)" }}>402 Payment Required</code> with a single EIP-712 signature.
                 </p>
               </div>
               <div className="space-y-4">
                 <h3 className="text-sm font-display font-bold uppercase tracking-wider flex items-center gap-2">
-                  <Globe className="w-4 h-4" style={{ color: "var(--neon-cyan)" }} /> Stellar as Proof Layer
+                  <Globe className="w-4 h-4" style={{ color: "var(--neon-cyan)" }} /> Receipts as Proof Layer
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed tracking-wide">
-                  Every AI audit result is hashed (SHA-256) and <strong className="text-foreground">attested back on Stellar</strong> via <code style={{ color: "var(--neon-cyan)" }}>Memo.hash</code>. Tamper-proof, independently verifiable — all on the Stellar ledger.
+                  Every AI audit result is hashed (SHA-256) and <strong className="text-foreground">bound to its payment receipt</strong>. Tamper-proof, independently verifiable - on-chain and off-chain.
                 </p>
               </div>
             </div>
           </section>
 
-          {/* MPP Handshake */}
+          {/* x402 Handshake */}
           <section className="space-y-8 py-8 border-y" style={{ borderColor: "rgba(0,255,136,0.1)" }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 flex items-center justify-center border" style={{ borderColor: "var(--neon-cyan)", boxShadow: "0 0 6px rgba(0,212,255,0.15)" }}>
                 <Zap className="w-5 h-5" style={{ color: "var(--neon-cyan)" }} />
               </div>
-              <h2 className="text-xl font-display font-bold uppercase tracking-wider">The MPP Handshake (402)</h2>
+              <h2 className="text-xl font-display font-bold uppercase tracking-wider">The x402 Handshake (402)</h2>
             </div>
 
             <p className="text-xs text-muted-foreground tracking-wide">
@@ -85,9 +85,9 @@ const Docs = () => {
 
             <div className="space-y-6">
               {[
-                { title: "1. Unauthorized Request (402)", desc: "Agent requests an audit. Bridge returns '402 Payment Required' with an HMAC-signed challenge.", icon: ShieldCheck },
-                { title: "2. Autonomous Settlement", desc: "Agent signs a Soroban SAC 'transfer' on Stellar. Payment hash attached to 'Authorization' header.", icon: CreditCard },
-                { title: "3. Onchain Verification", desc: "Bridge verifies the payment on Stellar Horizon API and acknowledges the transaction.", icon: Zap },
+                { title: "1. Unauthorized Request (402)", desc: "Agent requests an audit. Service returns '402 Payment Required' with exact price, asset and pay-to terms.", icon: ShieldCheck },
+                { title: "2. Autonomous Settlement", desc: "Agent signs an EIP-712 Permit2 authorization for 0.10 tUSDT. Signature sent in the 'PAYMENT-SIGNATURE' header.", icon: CreditCard },
+                { title: "3. Onchain Verification", desc: "Service settles the transfer on BOT Chain and returns the signed result with the payment tx.", icon: Zap },
               ].map((step, i) => (
                 <div key={i} className="flex gap-4 group">
                   <div className="flex flex-col items-center">
@@ -116,9 +116,9 @@ const Docs = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
-                { layer: "STELLAR LAYER", title: "Payment Receipt", desc: "USDC or XLM transfer recorded on Stellar. Verified via Horizon.", neon: "var(--neon-green)" },
-                { layer: "AI CONSENSUS", title: "GenLayer Result", desc: "5 independent AI nodes. Finality via the Equivalence Principle.", neon: "var(--neon-magenta)" },
-                { layer: "BRIDGING LAYER", title: "SHA-256 Digest", desc: "Audit results hashed and anchored on Stellar via Memo.hash.", neon: "var(--neon-cyan)" },
+                { layer: "PAYMENT LAYER", title: "tUSDT Receipt", desc: "0.10 tUSDT transfer recorded on BOT Chain. Verified on BOT Scan.", neon: "var(--neon-green)" },
+                { layer: "AI CONSENSUS", title: "AI Screening Result", desc: "AI validators screen the resume and return a scored verdict.", neon: "var(--neon-magenta)" },
+                { layer: "BRIDGING LAYER", title: "SHA-256 Digest", desc: "Audit results hashed (SHA-256) and bound to the payment receipt.", neon: "var(--neon-cyan)" },
               ].map((card) => (
                 <div key={card.title} className="cyber-card p-6 space-y-3" style={{ borderColor: `${card.neon}20` }}>
                   <div className="font-label text-[8px] font-bold uppercase tracking-[0.3em]" style={{ color: card.neon }}>{card.layer}</div>
@@ -137,9 +137,9 @@ const Docs = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               {[
-                { icon: Lock, title: "Stellar-Native MPP", desc: "Built on Stellar's official Machine Payments Protocol. First real-world implementation.", color: "var(--neon-green)" },
-                { icon: Scale, title: "Stellar Economics", desc: "Sub-cent fees and 5-second finality. Fee-sponsored USDC means zero gas friction.", color: "var(--neon-cyan)" },
-                { icon: Cpu, title: "Onchain Verification", desc: "Triple-verified: Stellar payment, attestation, and AI consensus. Verify at /verify.", color: "var(--neon-magenta)" },
+                { icon: Lock, title: "BOT-Chain x402", desc: "Built on the x402 payment standard and Uniswap Permit2. One signature per audit.", color: "var(--neon-green)" },
+                { icon: Scale, title: "Micro-Payment Economics", desc: "Sub-cent testnet fees. Permit2 approvals are one-time, then each audit is a single signature.", color: "var(--neon-cyan)" },
+                { icon: Cpu, title: "Onchain Verification", desc: "Triple-verified: tUSDT payment, result receipt, and AI consensus. Verify at /verify.", color: "var(--neon-magenta)" },
                 { icon: Rocket, title: "Mainnet-Ready", desc: "Built on Testnet, designed for Mainnet. Only RPC endpoints and contract addresses change.", color: "var(--neon-green)" },
               ].map((item) => (
                 <div key={item.title} className="space-y-2">
@@ -167,7 +167,7 @@ const Docs = () => {
           {/* Footer */}
           <footer className="py-12 border-t text-center space-y-4" style={{ borderColor: "rgba(0,255,136,0.1)" }}>
             <div className="text-[10px] text-muted-foreground tracking-[0.15em] uppercase">
-              <span style={{ color: "var(--neon-green)", opacity: 0.5 }}>&gt;</span> Nexa Bridge · Decentralized AI on Stellar
+              <span style={{ color: "var(--neon-green)", opacity: 0.5 }}>&gt;</span> Nexa Bridge · Decentralized AI on BOT Chain
             </div>
             <p className="text-[10px] text-muted-foreground tracking-[0.2em] uppercase">
               Architected by <span className="font-bold" style={{ color: "var(--neon-green)" }}>MrNetwork</span>

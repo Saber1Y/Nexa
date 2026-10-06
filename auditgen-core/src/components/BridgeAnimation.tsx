@@ -14,7 +14,7 @@ const CyberBridgeAnimation = () => {
     if (!ctx) return;
 
     let animId: number;
-    const chars = "NEXABRIDGE01STELLARSOROBANMPPAUDITUSDCXLM⬡◆▣░▒▓".split("");
+    const chars = "NEXABRIDGE01BOTCHAINTUSDTX402PERMIT2AUDITRECEIPT⬡◆▣░▒▓".split("");
     const fontSize = 14;
     let columns: number;
     let drops: number[];

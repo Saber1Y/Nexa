@@ -6,8 +6,8 @@ interface Stats {
   avgScore: number;
   avgTime: number;
   successRate: number;
-  totalUsdc: number;
-  totalXlm: number;
+  totalPaidTusdt: string;
+  receiptCount: number;
   latestAudit: string | null;
 }
 
@@ -33,7 +33,7 @@ const BridgeAnalytics = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "";
+        const apiUrl = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "");
         const res = await fetch(`${apiUrl}/api/stats`);
         setStats(await res.json());
       } catch { /* silent */ }
@@ -50,7 +50,7 @@ const BridgeAnalytics = () => {
     { label: "Success Rate", value: stats.successRate, suffix: "%", icon: <TrendingUp className="w-5 h-5" />, neon: "var(--neon-green)" },
     { label: "Avg Score", value: stats.avgScore, suffix: "/100", icon: <Zap className="w-5 h-5" />, neon: "var(--neon-cyan)" },
     { label: "Avg Consensus", value: stats.avgTime, suffix: "s", icon: <Clock className="w-5 h-5" />, neon: "var(--neon-cyan)" },
-    { label: "Volume", value: stats.totalUsdc + stats.totalXlm, suffix: " txns", icon: <DollarSign className="w-5 h-5" />, neon: "var(--neon-magenta)", extra: `${stats.totalUsdc} USDC · ${stats.totalXlm} XLM` },
+    { label: "Paid Volume", value: Number(stats.totalPaidTusdt), suffix: " tUSDT", icon: <DollarSign className="w-5 h-5" />, neon: "var(--neon-magenta)", extra: `${stats.receiptCount} on-chain receipts` },
   ];
 
   return (

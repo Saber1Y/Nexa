@@ -10,29 +10,51 @@ import {
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/hooks/useWallet";
 
-/* ── Wallet registry (Freighter only for now, easy to extend) ── */
+/* ── Wallet registry (injected EIP-1193 wallets) ── */
 const WALLETS = [
   {
-    id: "freighter",
-    name: "Freighter",
-    description: "Stellar's most popular browser wallet",
+    id: "metamask",
+    name: "MetaMask",
+    description: "EVM browser wallet for BOT Chain",
     icon: (
       <svg viewBox="0 0 40 40" className="w-9 h-9" fill="none">
-        <rect width="40" height="40" rx="10" fill="url(#freighter-grad)" />
+        <rect width="40" height="40" rx="10" fill="url(#metamask-grad)" />
         <path
           d="M12 20l5-8h6l5 8-5 8h-6l-5-8z"
           fill="white"
           fillOpacity="0.95"
         />
         <defs>
-          <linearGradient id="freighter-grad" x1="0" y1="0" x2="40" y2="40">
+          <linearGradient id="metamask-grad" x1="0" y1="0" x2="40" y2="40">
+            <stop stopColor="#F6851B" />
+            <stop offset="1" stopColor="#E2761B" />
+          </linearGradient>
+        </defs>
+      </svg>
+    ),
+    installUrl: "https://metamask.io/",
+  },
+  {
+    id: "injected",
+    name: "Browser Wallet",
+    description: "Any EIP-1193 wallet (Rabby, Coinbase, ...)",
+    icon: (
+      <svg viewBox="0 0 40 40" className="w-9 h-9" fill="none">
+        <rect width="40" height="40" rx="10" fill="url(#injected-grad)" />
+        <path
+          d="M12 20l5-8h6l5 8-5 8h-6l-5-8z"
+          fill="white"
+          fillOpacity="0.95"
+        />
+        <defs>
+          <linearGradient id="injected-grad" x1="0" y1="0" x2="40" y2="40">
             <stop stopColor="#6C63FF" />
             <stop offset="1" stopColor="#A78BFA" />
           </linearGradient>
         </defs>
       </svg>
     ),
-    installUrl: "https://www.freighter.app/",
+    installUrl: "https://metamask.io/",
   },
 ];
 
@@ -90,8 +112,8 @@ export default function WalletModal({ open, onOpenChange }: WalletModalProps) {
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground pt-1">
               {isConnected
-                ? "Your Stellar wallet is connected to Nexa."
-                : "Select a Stellar wallet to sign audit payments."}
+                ? "Your EVM wallet is connected to Nexa."
+                : "Select a wallet to sign tUSDT audit payments."}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -200,7 +222,7 @@ export default function WalletModal({ open, onOpenChange }: WalletModalProps) {
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 mt-1.5 text-primary hover:underline font-medium"
                       >
-                        Install Freighter <ExternalLink className="w-3 h-3" />
+                        Install {WALLETS[0].name} <ExternalLink className="w-3 h-3" />
                       </a>
                     )}
                   </div>
@@ -214,7 +236,7 @@ export default function WalletModal({ open, onOpenChange }: WalletModalProps) {
         <div className="h-px bg-border/50" />
         <div className="px-6 py-3.5 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
           <Wallet className="w-3 h-3" />
-          Secured by Stellar Network
+          Settlement on BOT Chain · tUSDT
         </div>
       </DialogContent>
     </Dialog>

@@ -148,7 +148,7 @@ const BulkAuditView = () => {
         {[
           { label: "Total Batches", value: "0" },
           { label: "Avg. Consensus Time", value: "--" },
-          { label: "Registry Storage", value: "Stellar Asset Contract" },
+          { label: "Registry Storage", value: "On-chain Result Receipts" },
         ].map((stat) => (
           <div key={stat.label} className="glass-card p-4 text-center">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">{stat.label}</p>

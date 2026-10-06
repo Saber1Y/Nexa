@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { explorerTxUrl } from "@/utils/botChain";
 
 interface CertData {
   match_score: number;
@@ -7,17 +8,24 @@ interface CertData {
   explanation: string;
   matched_skills?: string[];
   missing_skills?: string[];
-  stellarPaymentHash?: string;
-  stellarAttestationHash?: string;
   attestationDigest?: string;
-  txHash?: string;
   [key: string]: unknown;
 }
 
-export function generateCertificate(data: CertData, jobTitle: string, screeningId?: string) {
+interface CertMeta {
+  screeningId?: string;
+  paymentTx?: string;
+  receiptTx?: string;
+  resultHash?: string;
+  consensusTx?: string;
+}
+
+const GENLAYER_EXPLORER = "https://explorer-studio.genlayer.com/transactions/";
+
+export function generateCertificate(data: CertData, jobTitle: string, meta: CertMeta = {}) {
+  const { screeningId, paymentTx, receiptTx, resultHash, consensusTx } = meta;
   const doc = new jsPDF();
   const w = doc.internal.pageSize.getWidth();
-  const STELLAR_EXPLORER = "https://stellar.expert/explorer/testnet/tx/";
   let y = 20;
 
   // ── Header ─────────────────────────────────────────
@@ -36,7 +44,7 @@ export function generateCertificate(data: CertData, jobTitle: string, screeningI
 
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 150);
-  doc.text("Powered by Stellar + GenLayer Consensus", w / 2, y + 26, { align: "center" });
+  doc.text("Settlement by BOT Chain · Audit by Nexa x402 + AI Consensus", w / 2, y + 26, { align: "center" });
 
   y = 60;
 
@@ -121,28 +129,26 @@ export function generateCertificate(data: CertData, jobTitle: string, screeningI
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
 
-  const proofs = [
-    ["Stellar Payment", data.stellarPaymentHash, STELLAR_EXPLORER],
-    ["Stellar Attestation", data.stellarAttestationHash, STELLAR_EXPLORER],
-    ["GenLayer Consensus", data.txHash, "https://studio.genlayer.com/explorer/tx/"],
-  ];
+  const proofs: Array<[string, string, string]> = [];
+  if (paymentTx) proofs.push(["tUSDT Payment (BOT Chain)", paymentTx, explorerTxUrl(paymentTx)]);
+  if (receiptTx) proofs.push(["Result Receipt", receiptTx, explorerTxUrl(receiptTx)]);
+  if (consensusTx) proofs.push(["AI Consensus", consensusTx, `${GENLAYER_EXPLORER}${consensusTx}`]);
 
-  proofs.forEach(([label, hash, baseUrl]) => {
-    if (hash) {
-      doc.setTextColor(100, 100, 120);
-      doc.text(`${label}:`, 20, y);
-      doc.setTextColor(120, 80, 220);
-      doc.textWithLink(hash as string, 20, y + 4, { url: `${baseUrl}${hash}` });
-      y += 12;
-    }
+  proofs.forEach(([label, hash, url]) => {
+    doc.setTextColor(100, 100, 120);
+    doc.text(`${label}:`, 20, y);
+    doc.setTextColor(120, 80, 220);
+    doc.textWithLink(hash, 20, y + 4, { url });
+    y += 12;
   });
 
-  if (data.attestationDigest) {
+  const digest = resultHash || data.attestationDigest;
+  if (digest) {
     doc.setTextColor(100, 100, 120);
-    doc.text("Attestation Digest (SHA-256):", 20, y);
+    doc.text("Result Hash (SHA-256):", 20, y);
     doc.setTextColor(30, 30, 50);
     doc.setFont("courier", "normal");
-    doc.text(data.attestationDigest as string, 20, y + 4);
+    doc.text(digest, 20, y + 4);
     doc.setFont("helvetica", "normal");
     y += 12;
   }

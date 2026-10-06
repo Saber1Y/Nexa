@@ -1,7 +1,7 @@
 const techs = [
-  "Stellar", "Soroban", "USDC", "XLM", "MPP", "GenLayer",
-  "AI Consensus", "SHA-256", "Freighter", "Memo.hash",
-  "SAC Transfer", "402 Protocol", "Horizon API", "Smart Contract"
+  "BOT Chain", "tUSDT", "x402 Protocol", "Permit2", "EIP-712", "GenLayer",
+  "AI Consensus", "SHA-256", "Receipt Registry", "Result Hash",
+  "Exact Payments", "402 Challenge", "BOT Scan", "Smart Contract"
 ];
 
 const LanguageMarquee = () => (
