@@ -35,3 +35,13 @@ export function registerBuiltInService() {
     version: "1",
   });
 }
+
+export function listServices() {
+  return [...services.values()].filter((service) => service.active);
+}
+
+export function getService(id) {
+  return services.get(id);
+}
+
+export default {registerBuiltInService, listServices, getService};

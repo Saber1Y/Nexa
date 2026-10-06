@@ -17,6 +17,11 @@ export const BOT_FACILITATOR_KEY = process.env.NEXA_FACILITATOR_PRIVATE_KEY || "
 export const AUDIT_PRICE_ATOMIC = process.env.NEXA_AUDIT_PRICE_ATOMIC || "100000"; // 0.10 USDT
 export const AUDIT_SERVICE_ID = (process.env.NEXA_SERVICE_ID || process.env.NEXA_AUDIT_SERVICE_ID || "resume-intelligence-v1");
 export const AUDIT_SERVICE_VERSION = "1";
+export const MATCH_PRICE_ATOMIC = process.env.NEXA_MATCH_PRICE_ATOMIC || "50000"; // 0.05 USDT
+export const SKILLS_PRICE_ATOMIC = process.env.NEXA_SKILLS_PRICE_ATOMIC || "25000"; // 0.025 USDT
+export const MATCH_SERVICE_ID = "jd-resume-match-v1";
+export const SKILLS_SERVICE_ID = "skills-extraction-v1";
+
 
 export function validateBotConfig() {
   const required = [
