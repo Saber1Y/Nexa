@@ -4,7 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import cors from "cors";
-import {BOT_PAY_TO, BOT_USDT_ADDRESS, AUDIT_PRICE_ATOMIC, AUDIT_SERVICE_ID, AUDIT_SERVICE_VERSION, validateBotConfig} from "./botConfig.mjs";
+import {BOT_PAY_TO, BOT_USDT_ADDRESS, AUDIT_PRICE_ATOMIC, AUDIT_SERVICE_ID, AUDIT_SERVICE_VERSION,
+  MATCH_PRICE_ATOMIC, MATCH_SERVICE_ID, SKILLS_PRICE_ATOMIC, SKILLS_SERVICE_ID, validateBotConfig} from "./botConfig.mjs";
 import {encodeBase64Url, paymentRequired, parsePaymentSignature, verifyPayment, settlePayment} from "./botX402.mjs";
 import {listServices, registerBuiltInService} from "./serviceRegistry.mjs";
 import {runAudit} from "./aiAdapter.mjs";
@@ -239,3 +240,81 @@ if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
   const server = app.listen(Number(process.env.PORT || 3402), () => console.log("Nexa BOT bridge listening"));
   process.on("SIGINT", () => server.close(() => process.exit(0)));
 }
+
+app.post("/api/match", async (req, res) => {
+  const resourceUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  const signatureHeader = req.header("PAYMENT-SIGNATURE");
+  const {jobDescription = "", resumeText = ""} = req.body || {};
+  if (!jobDescription || typeof jobDescription !== "string" || !jobDescription.trim()) return res.status(400).json({error: "jobDescription is required"});
+  if (!resumeText || typeof resumeText !== "string" || !resumeText.trim()) return res.status(400).json({error: "resumeText is required"});
+  if (!signatureHeader) return send402(req, res);
+  let verified;
+  try {
+    const payload = parsePaymentSignature(signatureHeader);
+    verified = await verifyPayment(payload, resourceUrl);
+  } catch (error) {
+    return send402(req, res, error instanceof Error ? error.message : "invalid payment");
+  }
+  const id = paymentId(verified);
+  if (seenPayments.has(id)) return res.status(409).json({error: "duplicate_payment", paymentId: id});
+  let settlement;
+  try {
+    settlement = await settlePayment(verified);
+  } catch (error) {
+    return res.status(402).json({error: "settlement_failed", detail: error instanceof Error ? error.message : String(error)});
+  }
+  seenPayments.add(id);
+  res.setHeader("PAYMENT-RESPONSE", encodeBase64Url(settlement));
+  const system = `You are an ATS matcher. Return ONLY JSON with keys match_score (0-100), overlaps (string[]), gaps (string[]), verdict ("STRONG","GOOD","WEAK","NONE"), summary (string<=80). Compare JD vs resume semantically.`;
+  const user = `JOB_DESCRIPTION:\n${jobDescription}\n\nRESUME:\n${resumeText}`;
+  let result;
+  try {
+    const {runAudit} = await import("./aiAdapter.mjs");
+    const audit = await runAudit({jobTitle: "match", jobDescription, mustHaveSkills: "", resumeText, payer: verified.payer, adapter: undefined, systemPrompt: system, userPrompt: user});
+    result = audit.results;
+  } catch (error) {
+    return res.status(502).json({error: "execution_failed", detail: error instanceof Error ? error.message : String(error), payment: {...settlement, paymentId: id}});
+  }
+  const outputHash = resultHash(stableStringify({serviceId: MATCH_SERVICE_ID, serviceVersion: "1", results: result}));
+  try { await recordReceiptOnChain({paymentId: id, payer: verified.payer, provider: BOT_PAY_TO, asset: BOT_USDT_ADDRESS, amount: MATCH_PRICE_ATOMIC, serviceId: MATCH_SERVICE_ID, endpointHash: "", resultHash: outputHash, durationMs: 0}); } catch {}
+  res.json({ok: true, serviceId: MATCH_SERVICE_ID, paymentId: id, settlement, results: result});
+});
+
+app.post("/api/skills", async (req, res) => {
+  const resourceUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  const signatureHeader = req.header("PAYMENT-SIGNATURE");
+  const {resumeText = "", text = ""} = req.body || {};
+  const content = resumeText || text;
+  if (!content || typeof content !== "string" || !content.trim()) return res.status(400).json({error: "resumeText or text is required"});
+  if (!signatureHeader) return send402(req, res);
+  let verified;
+  try {
+    const payload = parsePaymentSignature(signatureHeader);
+    verified = await verifyPayment(payload, resourceUrl);
+  } catch (error) {
+    return send402(req, res, error instanceof Error ? error.message : "invalid payment");
+  }
+  const id = paymentId(verified);
+  if (seenPayments.has(id)) return res.status(409).json({error: "duplicate_payment", paymentId: id});
+  let settlement;
+  try {
+    settlement = await settlePayment(verified);
+  } catch (error) {
+    return res.status(402).json({error: "settlement_failed", detail: error instanceof Error ? error.message : String(error)});
+  }
+  seenPayments.add(id);
+  res.setHeader("PAYMENT-RESPONSE", encodeBase64Url(settlement));
+  const system = `Extract skills from text. Return ONLY JSON with keys hard_skills (string[]), soft_skills (string[]), tools (string[]), frameworks (string[]), certifications (string[]), years (number), raw_count (number). Deduplicate, lowercase, clean.`;
+  const user = `TEXT:\n${content}`;
+  let result;
+  try {
+    const {runAudit} = await import("./aiAdapter.mjs");
+    const audit = await runAudit({jobTitle: "skills", jobDescription: "", mustHaveSkills: "", resumeText: content, payer: verified.payer, adapter: undefined, systemPrompt: system, userPrompt: user});
+    result = audit.results;
+  } catch (error) {
+    return res.status(502).json({error: "execution_failed", detail: error instanceof Error ? error.message : String(error), payment: {...settlement, paymentId: id}});
+  }
+  const outputHash = resultHash(stableStringify({serviceId: SKILLS_SERVICE_ID, serviceVersion: "1", results: result}));
+  try { await recordReceiptOnChain({paymentId: id, payer: verified.payer, provider: BOT_PAY_TO, asset: BOT_USDT_ADDRESS, amount: SKILLS_PRICE_ATOMIC, serviceId: SKILLS_SERVICE_ID, endpointHash: "", resultHash: outputHash, durationMs: 0}); } catch {}
+  res.json({ok: true, serviceId: SKILLS_SERVICE_ID, paymentId: id, settlement, results: result});
+});
