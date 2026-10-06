@@ -27,3 +27,6 @@ dist/
 # Foundry
 cache/
 out/
+
+# Local audit ledger
+data/

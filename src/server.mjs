@@ -1,12 +1,14 @@
 import "dotenv/config";
 import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import express from "express";
 import cors from "cors";
 import {BOT_PAY_TO, BOT_USDT_ADDRESS, AUDIT_PRICE_ATOMIC, AUDIT_SERVICE_ID, AUDIT_SERVICE_VERSION, validateBotConfig} from "./botConfig.mjs";
 import {encodeBase64Url, paymentRequired, parsePaymentSignature, verifyPayment, settlePayment} from "./botX402.mjs";
 import {listServices, registerBuiltInService} from "./serviceRegistry.mjs";
 import {runAudit} from "./aiAdapter.mjs";
-import {recordReceiptOnChain} from "./receipts.mjs";
+import {recordReceiptOnChain, getReceiptOnChain} from "./receipts.mjs";
 
 const app = express();
 app.use(cors({exposedHeaders: ["PAYMENT-REQUIRED", "PAYMENT-RESPONSE"]}));
@@ -14,6 +16,27 @@ app.use(express.json({limit: "256kb"}));
 registerBuiltInService();
 
 const seenPayments = new Set();
+const AUDIT_LOG = path.join(process.cwd(), "data", "audits.json");
+const MAX_AUDITS = 200;
+
+function loadAudits() {
+  try {
+    return JSON.parse(fs.readFileSync(AUDIT_LOG, "utf8"));
+  } catch {
+    return [];
+  }
+}
+
+function appendAudit(record) {
+  try {
+    fs.mkdirSync(path.dirname(AUDIT_LOG), {recursive: true});
+    const audits = loadAudits();
+    audits.unshift(record);
+    fs.writeFileSync(AUDIT_LOG, JSON.stringify(audits.slice(0, MAX_AUDITS), null, 2));
+  } catch (error) {
+    console.error("audit log write failed:", error.message);
+  }
+}
 
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -41,7 +64,70 @@ app.get("/health", (req, res) => res.json({status: "ok", product: "Nexa", networ
 
 app.get("/api/services", (req, res) => res.json({x402Version: 2, services: listServices()}));
 
+app.get("/api/stats", (req, res) => {
+  const audits = loadAudits();
+  const scores = audits.map((a) => Number(a.results?.match_score ?? 0));
+  const recorded = audits.filter((a) => a.recorded).length;
+  const totalAtomic = audits.reduce((sum, a) => sum + Number(a.amount || 0), 0);
+  const times = audits.map((a) => Number(a.durationMs || 0)).filter((n) => n > 0);
+  res.json({
+    totalAudits: audits.length,
+    avgScore: scores.length ? Math.round(scores.reduce((s, n) => s + n, 0) / scores.length) : 0,
+    avgTime: times.length ? Math.round(times.reduce((s, n) => s + n, 0) / times.length / 1000) : 0,
+    successRate: audits.length ? Math.round((recorded / audits.length) * 100) : 0,
+    totalPaidAtomic: totalAtomic,
+    totalPaidTusdt: (totalAtomic / 1e6).toFixed(2),
+    receiptCount: recorded,
+    latestAudit: audits[0]?.completedAt ?? null,
+  });
+});
+
+const WAITLIST = path.join(process.cwd(), "data", "waitlist.json");
+
+app.post("/api/waitlist", (req, res) => {
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+    return res.status(400).json({error: "A valid email address is required."});
+  }
+  try {
+    fs.mkdirSync(path.dirname(WAITLIST), {recursive: true});
+    let entries = [];
+    try { entries = JSON.parse(fs.readFileSync(WAITLIST, "utf8")); } catch { entries = []; }
+    if (!entries.some((e) => e.email === email)) {
+      entries.push({email, joinedAt: new Date().toISOString()});
+      fs.writeFileSync(WAITLIST, JSON.stringify(entries, null, 2));
+    }
+    res.json({ok: true, position: entries.findIndex((e) => e.email === email) + 1});
+  } catch (error) {
+    res.status(500).json({error: error instanceof Error ? error.message : String(error)});
+  }
+});
+
+app.get("/api/audits", (req, res) => res.json({audits: loadAudits()}));
+
+app.get("/api/receipt/:paymentId", async (req, res) => {
+  try {
+    const receipt = await getReceiptOnChain(req.params.paymentId);
+    res.json(receipt);
+  } catch (error) {
+    res.status(400).json({found: false, error: error instanceof Error ? error.message : String(error)});
+  }
+});
+
+app.get("/api/verify/:paymentId", async (req, res) => {
+  try {
+    const onChain = await getReceiptOnChain(req.params.paymentId);
+    const local = loadAudits().find((a) => a.paymentId === req.params.paymentId) || null;
+    if (!onChain.found && !local) return res.json({found: false, error: "No audit found for this paymentId."});
+    const hashMatches = local && onChain.found ? local.resultHash === onChain.resultHash : null;
+    res.json({found: true, audit: { ...local, onChain }, hashMatches});
+  } catch (error) {
+    res.status(400).json({found: false, error: error instanceof Error ? error.message : String(error)});
+  }
+});
+
 app.post("/api/audit", async (req, res) => {
+  const startedAt = Date.now();
   const resourceUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   const signatureHeader = req.header("PAYMENT-SIGNATURE");
 
@@ -104,6 +190,24 @@ app.post("/api/audit", async (req, res) => {
   } catch (error) {
     onChainReceipt = {recorded: false, reason: error instanceof Error ? error.message : String(error)};
   }
+
+  appendAudit({
+    paymentId: id,
+    screeningId: audit.screeningId,
+    adapter: audit.adapter,
+    service: {id: AUDIT_SERVICE_ID, version: AUDIT_SERVICE_VERSION},
+    jobTitle,
+    results: audit.results,
+    resultHash: outputHash,
+    paymentTx: settlement.transaction,
+    receiptTx: onChainReceipt.tx || null,
+    recorded: Boolean(onChainReceipt.recorded),
+    payer: verified.payer,
+    amount: AUDIT_PRICE_ATOMIC,
+    asset: BOT_USDT_ADDRESS,
+    completedAt: new Date().toISOString(),
+    durationMs: Date.now() - startedAt,
+  });
 
   return res.json({
     success: true,

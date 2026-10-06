@@ -7,10 +7,8 @@
   "scripts": {
     "start": "node src/server.mjs",
     "dev": "node --watch src/server.mjs",
-    "test:stellar": "node scripts/test-stellar.mjs",
     "test:bot": "node scripts/test-bot.mjs",
     "demo:agent": "node scripts/customer-agent-demo.mjs",
-    "generate:wallet": "node scripts/generate-wallet.mjs",
     "test:x402": "node scripts/test-x402-negative.mjs"
   },
   "keywords": [
@@ -24,14 +22,10 @@
   "author": "mrnetwork0001",
   "license": "MIT",
   "dependencies": {
-    "@stellar/mpp": "^0.4.0",
-    "@stellar/stellar-sdk": "^15.0.1",
-    "@supabase/supabase-js": "^2.103.0",
     "cors": "^2.8.5",
     "dotenv": "^17.4.1",
     "express": "^5.2.1",
     "genlayer-js": "^0.28.4",
-    "mppx": "^0.4.12",
     "viem": "^2.57.3",
     "zod": "^4.6.5"
   }

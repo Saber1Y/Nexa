@@ -17,7 +17,9 @@ const abi = [{
     {name: "resultHash", type: "bytes32"},
   ],
   outputs: [],
-}];
+},
+{type: "function", name: "recorded", stateMutability: "view", inputs: [{name: "", type: "bytes32"}], outputs: [{type: "bool"}]},
+{type: "function", name: "owner", stateMutability: "view", inputs: [], outputs: [{type: "address"}]}];
 
 export function serviceIdBytes32() {
   return keccak256(toBytes(AUDIT_SERVICE_ID));
@@ -40,4 +42,44 @@ export async function recordReceiptOnChain({paymentId, payer, provider, asset, a
   const receipt = await publicClient.waitForTransactionReceipt({hash});
   if (receipt.status !== "success") throw new Error(`receipt tx failed: ${hash}`);
   return {recorded: true, tx: hash, registry: BOT_RECEIPT_REGISTRY, signer: account.address};
+}
+
+const REGISTRY_START_BLOCK = BigInt(process.env.NEXA_RECEIPT_REGISTRY_START_BLOCK || "25883956");
+
+const eventAbi = [{
+  type: "event",
+  name: "PaymentReceiptRecorded",
+  anonymous: false,
+  inputs: [
+    {name: "paymentId", type: "bytes32", indexed: true},
+    {name: "serviceId", type: "bytes32", indexed: true},
+    {name: "payer", type: "address", indexed: true},
+    {name: "provider", type: "address", indexed: false},
+    {name: "asset", type: "address", indexed: false},
+    {name: "amount", type: "uint256", indexed: false},
+    {name: "resultHash", type: "bytes32", indexed: false},
+  ],
+}];
+
+export async function getReceiptOnChain(paymentId) {
+  if (!/^0x[0-9a-fA-F]{64}$/.test(paymentId)) throw new Error("paymentId must be a 32-byte hex string");
+  const publicClient = createPublicClient({chain: {id: BOT_CHAIN_ID, name: "BOT", nativeCurrency: {name: "tBOT", symbol: "tBOT", decimals: 18}, rpcUrls: {default: {http: [BOT_RPC_URL]}}}, transport: http(BOT_RPC_URL)});
+  const recorded = await publicClient.readContract({address: BOT_RECEIPT_REGISTRY, abi, functionName: "recorded", args: [paymentId]});
+  const logs = await publicClient.getContractEvents({address: BOT_RECEIPT_REGISTRY, abi: eventAbi, eventName: "PaymentReceiptRecorded", args: {paymentId}, fromBlock: REGISTRY_START_BLOCK, toBlock: "latest"});
+  const entry = logs.at(-1);
+  return {
+    found: Boolean(entry),
+    recorded: Boolean(recorded),
+    registry: BOT_RECEIPT_REGISTRY,
+    paymentId,
+    serviceId: entry?.args?.serviceId,
+    payer: entry?.args?.payer,
+    provider: entry?.args?.provider,
+    asset: entry?.args?.asset,
+    amount: entry?.args?.amount?.toString(),
+    resultHash: entry?.args?.resultHash,
+    tx: entry?.transactionHash,
+    blockNumber: entry?.blockNumber?.toString(),
+    explorerUrl: entry?.transactionHash ? `${process.env.BOT_EXPLORER_URL || "https://scan.bohr.life"}/tx/${entry.transactionHash}` : null,
+  };
 }
