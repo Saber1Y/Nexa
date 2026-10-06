@@ -105,6 +105,31 @@ const Docs = () => {
             </div>
           </section>
 
+          {/* Services */}
+          <section className="space-y-8 py-8 border-y" style={{ borderColor: "rgba(0,255,136,0.1)" }}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 flex items-center justify-center border" style={{ borderColor: "var(--neon-cyan)", boxShadow: "0 0 6px rgba(0,212,255,0.15)" }}>
+                <Cpu className="w-5 h-5" style={{ color: "var(--neon-cyan)" }} />
+              </div>
+              <h2 className="text-xl font-display font-bold uppercase tracking-wider">Machine-Payable Services (x402)</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { id: "resume-intelligence-v1", price: "0.10 tUSDT", endpoint: "/api/audit", desc: "AI job/candidate fit audit (score, strengths, gaps, recommendations).", neon: "var(--neon-green)" },
+                { id: "jd-resume-match-v1", price: "0.05 tUSDT", endpoint: "/api/match", desc: "Semantic JD↔resume match with overlaps/gaps and verdict.", neon: "var(--neon-cyan)" },
+                { id: "skills-extraction-v1", price: "0.025 tUSDT", endpoint: "/api/skills", desc: "Extracts hard/soft skills, tools, frameworks, certifications, years.", neon: "var(--neon-magenta)" },
+              ].map((svc) => (
+                <div key={svc.id} className="cyber-card p-6 space-y-3" style={{ borderColor: `${svc.neon}20` }}>
+                  <div className="font-label text-[8px] font-bold uppercase tracking-[0.3em]" style={{ color: svc.neon }}>{svc.price}</div>
+                  <h4 className="text-sm font-display font-bold uppercase tracking-wider">{svc.id}</h4>
+                  <p className="text-[9px] text-muted-foreground leading-relaxed tracking-wide font-mono">{svc.endpoint}</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed tracking-wide">{svc.desc}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+
           {/* Triple Verification */}
           <section className="space-y-8">
             <div className="flex items-center gap-3">
