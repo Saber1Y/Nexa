@@ -8,6 +8,9 @@ One real paid service runs end to end today: `resume-intelligence-v1` (candidate
 Everything in this repository was verified against BOT Chain Bohr Testnet (chain id `968`).
 Nothing is mocked in the payment path: the settlement transaction, the receipt transaction, and the receipt lookup are real on-chain calls.
 
+Live deployment: https://nexa-ai-bridge-kappa.vercel.app
+The Vercel project is connected to `https://github.com/Saber1Y/Nexa`, so every push to `main` deploys the app.
+
 ## Payment protocol
 
 The server is the source of truth for the protocol, implemented in `src/botX402.mjs`.
@@ -239,8 +242,10 @@ Anyone can verify a result without trusting this repository:
 
 ## Deploy
 
-`vercel.json` and `api/index.mjs` are unchanged in shape: the Express app is exported as the serverless function and the frontend builds to `auditgen-core/dist`.
-Set the environment variables from `.env.example` in the deployment target before deploying.
+`vercel.json` and `api/index.mjs` keep their original shape: the Express app is exported as the serverless function and the frontend builds to `auditgen-core/dist`.
+The serverless function gets `maxDuration: 60` because the flow settles on-chain before executing the AI service.
+Set every variable from `.env.example` in the deployment target before deploying.
+On Vercel the audit ledger and waitlist live under `/tmp`, so `/api/audits` and `/api/stats` reflect the current instance only; receipt verification through `/api/receipt` and `/api/verify` reads the chain and is unaffected.
 
 ## Legacy
 
