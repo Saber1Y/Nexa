@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { BarChart3, Zap, TrendingUp, Clock, DollarSign } from "lucide-react";
+import { apiEndpoint } from "@/utils/apiBase";
 
 interface Stats {
   totalAudits: number;
@@ -33,8 +34,7 @@ const BridgeAnalytics = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const apiUrl = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "");
-        const res = await fetch(`${apiUrl}/api/stats`);
+        const res = await fetch(apiEndpoint("/api/stats"));
         setStats(await res.json());
       } catch { /* silent */ }
     };

@@ -10,6 +10,7 @@ import { useX402Bot, type AuditScreeningResults, type AuditSuccessResponse, type
 import { useWallet } from "@/hooks/useWallet";
 import { explorerTxUrl, formatUsdtAmount } from "@/utils/botChain";
 import { generateCertificate } from "@/utils/generateCertificate";
+import { API_BASE } from "@/utils/apiBase";
 
 const stageHints: Record<X402Stage, string> = {
   quote: "Requesting x402 quote from the audit service...",
@@ -48,9 +49,7 @@ const Audit = () => {
     setConsensusTx(null);
     setScreeningId(null);
     try {
-      const apiUrl =
-        import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:3402";
-      const data = await runAudit(`${apiUrl}/api/audit`, address, {
+      const data = await runAudit(`${API_BASE}/api/audit`, address, {
         jobTitle,
         jobDescription,
         mustHaveSkills,

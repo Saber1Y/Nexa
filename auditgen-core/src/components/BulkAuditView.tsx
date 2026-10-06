@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Upload, Users, FileText, Trash2, AlertCircle, Mail, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { apiEndpoint } from "@/utils/apiBase";
 
 const BulkAuditView = () => {
   const [mockFiles] = useState([
@@ -22,8 +23,7 @@ const BulkAuditView = () => {
     setError("");
     setSubmitting(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "";
-      const res = await fetch(`${apiUrl}/api/waitlist`, {
+      const res = await fetch(apiEndpoint("/api/waitlist"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),

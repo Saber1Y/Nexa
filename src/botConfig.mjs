@@ -15,7 +15,7 @@ export const BOT_RECEIPT_REGISTRY = process.env.NEXA_RECEIPT_REGISTRY_ADDRESS ||
 export const BOT_FACILITATOR_KEY = process.env.NEXA_FACILITATOR_PRIVATE_KEY || "";
 
 export const AUDIT_PRICE_ATOMIC = process.env.NEXA_AUDIT_PRICE_ATOMIC || "100000"; // 0.10 USDT
-export const AUDIT_SERVICE_ID = process.env.NEXA_AUDIT_SERVICE_ID || "resume-intelligence-v1";
+export const AUDIT_SERVICE_ID = (process.env.NEXA_SERVICE_ID || process.env.NEXA_AUDIT_SERVICE_ID || "resume-intelligence-v1");
 export const AUDIT_SERVICE_VERSION = "1";
 
 export function validateBotConfig() {

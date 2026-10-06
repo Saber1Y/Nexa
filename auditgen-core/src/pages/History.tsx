@@ -2,9 +2,8 @@ import { useState, useEffect, type ReactNode } from "react";
 import { Activity, ExternalLink, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, XCircle, Copy, Check, ShieldCheck, ShieldAlert } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { explorerTxUrl } from "@/utils/botChain";
+import { API_BASE } from "@/utils/apiBase";
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:3402";
 
 interface ScreeningResults {
   verdict: string;

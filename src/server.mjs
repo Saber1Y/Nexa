@@ -16,7 +16,8 @@ app.use(express.json({limit: "256kb"}));
 registerBuiltInService();
 
 const seenPayments = new Set();
-const AUDIT_LOG = path.join(process.cwd(), "data", "audits.json");
+const DATA_DIR = process.env.NEXA_DATA_DIR || (process.env.VERCEL ? "/tmp/nexa" : path.join(process.cwd(), "data"));
+const AUDIT_LOG = path.join(DATA_DIR, "audits.json");
 const MAX_AUDITS = 200;
 
 function loadAudits() {
@@ -82,7 +83,7 @@ app.get("/api/stats", (req, res) => {
   });
 });
 
-const WAITLIST = path.join(process.cwd(), "data", "waitlist.json");
+const WAITLIST = path.join(DATA_DIR, "waitlist.json");
 
 app.post("/api/waitlist", (req, res) => {
   const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";

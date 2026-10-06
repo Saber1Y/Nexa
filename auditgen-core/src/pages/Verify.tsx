@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import ScoreRing from "@/components/ScoreRing";
 import { explorerTxUrl, BOT_USDT_DECIMALS } from "@/utils/botChain";
+import { API_BASE } from "@/utils/apiBase";
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:3402";
 
 const PAYMENT_ID_PATTERN = /^0x[0-9a-fA-F]{64}$/;
 
