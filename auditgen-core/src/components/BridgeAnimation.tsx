@@ -121,7 +121,7 @@ const CyberBridgeAnimation = () => {
             ⬡ NEXA BRIDGE ⬡
           </p>
           <p className="font-label text-[9px] md:text-[10px] tracking-[0.2em] uppercase mt-1" style={{ color: "var(--neon-cyan)", opacity: 0.6 }}>
-            STELLAR → GENLAYER
+            BOT CHAIN → GENLAYER
           </p>
         </div>
       </div>

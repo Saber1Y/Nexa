@@ -267,10 +267,7 @@ const Landing = () => {
             <span style={{ color: "var(--neon-green)", opacity: 0.5 }}>&gt;</span> Nexa Bridge · Agents on BOT Chain
           </div>
           <div>
-            Created by{" "}
-            <a href="https://x.com/encrypt_wizard" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: "var(--neon-green)" }}>
-              MrNetwork
-            </a>
+            Built on <span className="font-bold" style={{ color: "var(--neon-green)" }}>BOT Chain</span>
           </div>
           <div className="flex items-center gap-4">
             <a href="https://scan.bohr.life" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">BOT Scan</a>

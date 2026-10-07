@@ -6,7 +6,6 @@ import {
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import archImg from "@/assets/nexa-arch.png";
 
 const Docs = () => {
   const navigate = useNavigate();
@@ -38,16 +37,10 @@ const Docs = () => {
               <h2 className="text-xl font-display font-bold uppercase tracking-wider">Bridge Architecture</h2>
             </div>
             
-            <div className="cyber-card overflow-hidden">
-              <div className="aspect-video relative overflow-hidden flex items-center justify-center bg-black/20">
-                <img src={archImg} alt="Nexa Architecture Diagram" className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-              </div>
-              <div className="p-6 border-t border-border/50" style={{ background: "rgba(0,255,136,0.02)" }}>
-                <p className="text-[10px] text-muted-foreground leading-relaxed italic tracking-wide">
-                  <span style={{ color: "var(--neon-green)" }}>&gt;</span> BOT Chain serves as the autonomous payment layer. AI agents pay tUSDT via x402 + Permit2, with an on-chain payment receipt and a signed result hash for every audit.
-                </p>
-              </div>
+            <div className="cyber-card p-6" style={{ background: "rgba(0,255,136,0.02)" }}>
+              <p className="text-[10px] text-muted-foreground leading-relaxed italic tracking-wide">
+                <span style={{ color: "var(--neon-green)" }}>&gt;</span> BOT Chain serves as the autonomous payment layer. AI agents pay tUSDT via x402 + Permit2, with an on-chain payment receipt and a signed result hash for every audit.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -195,7 +188,7 @@ const Docs = () => {
               <span style={{ color: "var(--neon-green)", opacity: 0.5 }}>&gt;</span> Nexa Bridge · Decentralized AI on BOT Chain
             </div>
             <p className="text-[10px] text-muted-foreground tracking-[0.2em] uppercase">
-              Architected by <span className="font-bold" style={{ color: "var(--neon-green)" }}>MrNetwork</span>
+              Powered by <span className="font-bold" style={{ color: "var(--neon-green)" }}>BOT Chain</span>
             </p>
           </footer>
         </main>
