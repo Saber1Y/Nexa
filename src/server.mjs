@@ -57,10 +57,7 @@ function paymentId(payment) {
 }
 
 function send402(req, res, error, serviceId = AUDIT_SERVICE_ID, priceAtomic = AUDIT_PRICE_ATOMIC) {
-  const body = paymentRequired(`${req.protocol}://${req.get("host")}${req.originalUrl}`, error);
-  if (serviceId !== AUDIT_SERVICE_ID || priceAtomic !== AUDIT_PRICE_ATOMIC) {
-    body.accepts = body.accepts.map((a) => ({...a, amount: priceAtomic, extra: {...a.extra, serviceId}}));
-  }
+  const body = paymentRequired(`${req.protocol}://${req.get("host")}${req.originalUrl}`, error, serviceId, priceAtomic);
   res.setHeader("PAYMENT-REQUIRED", encodeBase64Url(body));
   return res.status(402).json(body);
 }
@@ -143,14 +140,14 @@ app.post("/api/audit", async (req, res) => {
   if (!jobTitle || typeof jobTitle !== "string") return res.status(400).json({error: "jobTitle is required"});
   if (!resumeText || typeof resumeText !== "string" || !resumeText.trim()) return res.status(400).json({error: "resumeText is required"});
 
-  if (!signatureHeader) return send402(req, res, undefined, MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
+  if (!signatureHeader) return send402(req, res, undefined, AUDIT_SERVICE_ID, AUDIT_PRICE_ATOMIC);
 
   let verified;
   try {
     const payload = parsePaymentSignature(signatureHeader);
-    verified = await verifyPayment(payload, resourceUrl);
+    verified = await verifyPayment(payload, resourceUrl, AUDIT_SERVICE_ID, AUDIT_PRICE_ATOMIC);
   } catch (error) {
-    return send402(req, res, error instanceof Error ? error.message : "invalid payment", MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
+    return send402(req, res, error instanceof Error ? error.message : "invalid payment", AUDIT_SERVICE_ID, AUDIT_PRICE_ATOMIC);
   }
 
   const id = paymentId(verified);
@@ -248,9 +245,9 @@ app.post("/api/match", async (req, res) => {
   let verified;
   try {
     const payload = parsePaymentSignature(signatureHeader);
-    verified = await verifyPayment(payload, resourceUrl);
+    verified = await verifyPayment(payload, resourceUrl, MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
   } catch (error) {
-    return send402(req, res, error instanceof Error ? error.message : "invalid payment");
+    return send402(req, res, error instanceof Error ? error.message : "invalid payment", MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
   }
   const id = paymentId(verified);
   if (seenPayments.has(id)) return res.status(409).json({error: "duplicate_payment", paymentId: id});
@@ -283,13 +280,13 @@ app.post("/api/skills", async (req, res) => {
   const {resumeText = "", text = ""} = req.body || {};
   const content = resumeText || text;
   if (!content || typeof content !== "string" || !content.trim()) return res.status(400).json({error: "resumeText or text is required"});
-  if (!signatureHeader) return send402(req, res, undefined, MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
+  if (!signatureHeader) return send402(req, res, undefined, SKILLS_SERVICE_ID, SKILLS_PRICE_ATOMIC);
   let verified;
   try {
     const payload = parsePaymentSignature(signatureHeader);
-    verified = await verifyPayment(payload, resourceUrl);
+    verified = await verifyPayment(payload, resourceUrl, SKILLS_SERVICE_ID, SKILLS_PRICE_ATOMIC);
   } catch (error) {
-    return send402(req, res, error instanceof Error ? error.message : "invalid payment");
+    return send402(req, res, error instanceof Error ? error.message : "invalid payment", SKILLS_SERVICE_ID, SKILLS_PRICE_ATOMIC);
   }
   const id = paymentId(verified);
   if (seenPayments.has(id)) return res.status(409).json({error: "duplicate_payment", paymentId: id});
@@ -330,9 +327,9 @@ app.post("/api/match/batch", async (req, res) => {
   let verified;
   try {
     const payload = parsePaymentSignature(signatureHeader);
-    verified = await verifyPayment(payload, resourceUrl);
+    verified = await verifyPayment(payload, resourceUrl, MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
   } catch (error) {
-    return send402(req, res, error instanceof Error ? error.message : "invalid payment");
+    return send402(req, res, error instanceof Error ? error.message : "invalid payment", MATCH_SERVICE_ID, MATCH_PRICE_ATOMIC);
   }
   const id = paymentId(verified);
   if (seenPayments.has(id)) return res.status(409).json({error: "duplicate_payment", paymentId: id});

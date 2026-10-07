@@ -79,11 +79,11 @@ export function decodeBase64Url(value) {
   return JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
 }
 
-export function paymentRequirements(resourceUrl) {
+export function paymentRequirements(resourceUrl, serviceId = AUDIT_SERVICE_ID, priceAtomic = AUDIT_PRICE_ATOMIC) {
   return {
     scheme: "exact",
     network: BOT_NETWORK,
-    amount: AUDIT_PRICE_ATOMIC,
+    amount: priceAtomic,
     asset: BOT_USDT_ADDRESS,
     payTo: BOT_PAY_TO,
     maxTimeoutSeconds: 300,
@@ -93,7 +93,7 @@ export function paymentRequirements(resourceUrl) {
       assetTransferMethod: "permit2",
       permit2: BOT_PERMIT2_ADDRESS,
       proxy: BOT_EXACT_PERMIT2_PROXY,
-      serviceId: AUDIT_SERVICE_ID,
+      serviceId,
     },
     resource: {
       url: resourceUrl,
@@ -103,8 +103,8 @@ export function paymentRequirements(resourceUrl) {
   };
 }
 
-export function paymentRequired(resourceUrl, error = "PAYMENT-SIGNATURE header is required") {
-  const requirements = paymentRequirements(resourceUrl);
+export function paymentRequired(resourceUrl, error = "PAYMENT-SIGNATURE header is required", serviceId, priceAtomic) {
+  const requirements = paymentRequirements(resourceUrl, serviceId, priceAtomic);
   return {
     x402Version: 2,
     error,
@@ -119,8 +119,8 @@ export function parsePaymentSignature(header) {
   return decodeBase64Url(header);
 }
 
-export async function verifyPayment(paymentPayload, resourceUrl) {
-  const required = paymentRequirements(resourceUrl);
+export async function verifyPayment(paymentPayload, resourceUrl, serviceId = AUDIT_SERVICE_ID, priceAtomic = AUDIT_PRICE_ATOMIC) {
+  const required = paymentRequirements(resourceUrl, serviceId, priceAtomic);
   if (!paymentPayload || paymentPayload.x402Version !== 2) throw new Error("invalid_x402_version");
   const accepted = paymentPayload.accepted;
   if (!accepted || accepted.scheme !== "exact" || accepted.network !== BOT_NETWORK) throw new Error("invalid_payment_requirements");
