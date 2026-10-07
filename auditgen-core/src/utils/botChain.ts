@@ -2,7 +2,7 @@ import type { Address } from "viem";
 
 // ── BOT Chain (Bohr Testnet) configuration ─────────────────────────────────
 export const BOT_CHAIN_ID = 968;
-export const BOT_CHAIN_HEX = "0x251";
+export const BOT_CHAIN_HEX = "0x3c8";
 export const BOT_CHAIN_NAME = "BOT Chain Bohr Testnet";
 export const BOT_NETWORK = "eip155:968";
 export const BOT_RPC_URL = "https://rpc.bohr.life";
