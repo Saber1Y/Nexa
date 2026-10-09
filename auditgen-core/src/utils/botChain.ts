@@ -1,24 +1,32 @@
 import type { Address } from "viem";
 
-// ── BOT Chain Mainnet configuration ─────────────────────────────────────────
-export const BOT_CHAIN_ID = 677;
-export const BOT_CHAIN_HEX = "0x2a5";
-export const BOT_CHAIN_NAME = "BOT Chain Mainnet";
-export const BOT_NETWORK = "eip155:677";
-export const BOT_RPC_URL = "https://rpc.botchain.ai";
-export const BOT_EXPLORER_URL = "https://scan.botchain.ai";
-export const BOT_USDT_ADDRESS: Address = "0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C";
+// Chain settings come from the selected Vite mode and its environment file.
+export const BOT_CHAIN_ID = Number(import.meta.env.VITE_BOT_CHAIN_ID || 677);
+export const BOT_CHAIN_HEX = `0x${BOT_CHAIN_ID.toString(16)}`;
+export const BOT_CHAIN_NAME = BOT_CHAIN_ID === 968 ? "BOT Chain Bohr Testnet" : "BOT Chain Mainnet";
+export const BOT_NETWORK = `eip155:${BOT_CHAIN_ID}`;
+export const BOT_RPC_URL = import.meta.env.VITE_BOT_RPC_URL || (BOT_CHAIN_ID === 968 ? "https://rpc.bohr.life" : "https://rpc.botchain.ai");
+export const BOT_EXPLORER_URL = import.meta.env.VITE_BOT_EXPLORER_URL || (BOT_CHAIN_ID === 968 ? "https://scan.bohr.life" : "https://scan.botchain.ai");
+export const BOT_USDT_ADDRESS: Address = (import.meta.env.VITE_BOT_USDT_ADDRESS || (BOT_CHAIN_ID === 968 ? "0x75edC9335175Fc0552D51D48439F229c10420fe3" : "0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C")) as Address;
 export const BOT_USDT_DECIMALS = 6;
 export const BOT_PERMIT2_ADDRESS: Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 export const BOT_EXACT_PERMIT2_PROXY: Address = "0x402085c248EeA27D92E8b30b2C58ed07f9E20001";
+export const BOT_GATEWAY_ADDRESS = (import.meta.env.VITE_NEXA_GATEWAY_ADDRESS || "") as Address | "";
+export const BOT_SERVICE_REGISTRY_ADDRESS = (
+  import.meta.env.VITE_NEXA_SERVICE_REGISTRY_ADDRESS ||
+  (BOT_CHAIN_ID === 677 ? "0x4d5845487a11491575aFE5E63554E45D3b553f51" : BOT_CHAIN_ID === 968 ? "0x6A2C234080Da1329b0418E4d5Dc34b2004D464bF" : "")
+) as Address | "";
+export const BOT_RECEIPT_REGISTRY_ADDRESS = (
+  import.meta.env.VITE_NEXA_RECEIPT_REGISTRY_ADDRESS ||
+  (BOT_CHAIN_ID === 677 ? "0x4a29F92A5Bf3F1e242a8bcdc5F7009e67395c5B1" : BOT_CHAIN_ID === 968 ? "0xC37C0a8988BB174f2a9b199b8B8f0Fb51f5c848D" : "")
+) as Address | "";
 
-// One-time ERC-20 approval budget: 10 USDT (many audits before re-approving).
 export const DEFAULT_APPROVAL_BUDGET = 10_000_000n;
 
 export const BOT_CHAIN = {
   id: BOT_CHAIN_ID,
   name: BOT_CHAIN_NAME,
-  nativeCurrency: { name: "tBOT", symbol: "tBOT", decimals: 18 },
+  nativeCurrency: { name: BOT_CHAIN_ID === 968 ? "tBOT" : "BOT", symbol: BOT_CHAIN_ID === 968 ? "tBOT" : "BOT", decimals: 18 },
   rpcUrls: { default: { http: [BOT_RPC_URL] } },
   blockExplorers: { default: { name: "BOT Scan", url: BOT_EXPLORER_URL } },
 } as const;
@@ -56,7 +64,7 @@ export function getInjectedProvider(): InjectedEthereumProvider | null {
 const ADD_ETHEREUM_CHAIN_PARAMS = {
   chainId: BOT_CHAIN_HEX,
   chainName: BOT_CHAIN_NAME,
-  nativeCurrency: { name: "tBOT", symbol: "tBOT", decimals: 18 },
+  nativeCurrency: { name: BOT_CHAIN_ID === 968 ? "tBOT" : "BOT", symbol: BOT_CHAIN_ID === 968 ? "tBOT" : "BOT", decimals: 18 },
   rpcUrls: [BOT_RPC_URL],
   blockExplorerUrls: [BOT_EXPLORER_URL],
 };

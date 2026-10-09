@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import {getGenLayerClient, submitScreening, waitForReceipt, getScreeningIdFromReceipt, getScreening} from "./genlayer.mjs";
-import {paidLlmChat, upstreamConfigured} from "./upstreamX402.mjs";
+import {createChatCompletion, llmApiConfigured} from "./llmApi.mjs";
 
 const AUDIT_SYSTEM = `You are a rigorous technical recruiter. Analyze the candidate against the job.
 Respond with ONLY a JSON object, no markdown, with exactly these keys:
@@ -57,7 +57,7 @@ function localScreeningId(input) {
   return `local-${crypto.createHash("sha256").update(input).digest("hex").slice(0, 24)}`;
 }
 
-export async function runAudit({jobTitle, jobDescription, mustHaveSkills, resumeText, payer, adapter}) {
+export async function runAudit({jobTitle, jobDescription, mustHaveSkills, resumeText, payer, adapter, systemPrompt, userPrompt}) {
   const selected = adapter || process.env.NEXA_AI_ADAPTER || (process.env.GENLAYER_PRIVATE_KEY ? "genlayer" : "llm");
 
   if (selected === "genlayer") {
@@ -70,7 +70,7 @@ export async function runAudit({jobTitle, jobDescription, mustHaveSkills, resume
   }
 
   if (selected !== "llm") throw new Error(`unknown AI adapter: ${selected}`);
-  if (!upstreamConfigured()) throw new Error("llm adapter requires NEXA_UPSTREAM_PRIVATE_KEY");
+  if (!llmApiConfigured()) throw new Error("LLM adapter requires NEXA_LLM_API_KEY");
 
   const prompt = `Job title: ${jobTitle}
 Job description: ${jobDescription || "n/a"}
@@ -78,15 +78,15 @@ Required skills: ${mustHaveSkills || "n/a"}
 Candidate resume:
 ${resumeText}`;
   const messages = [
-    {role: "system", content: AUDIT_SYSTEM},
-    {role: "user", content: prompt},
+    {role: "system", content: systemPrompt || AUDIT_SYSTEM},
+    {role: "user", content: userPrompt || prompt},
   ];
   let lastError = null;
   let success = null;
   for (let attempt = 1; attempt <= 2 && !success; attempt++) {
     try {
-      const call = await paidLlmChat(messages, {maxTokens: 800});
-      const results = extractJson(call.result.content);
+      const call = await createChatCompletion(messages, {maxTokens: 800});
+      const results = systemPrompt || userPrompt ? JSON.parse(call.content.slice(call.content.indexOf("{"), call.content.lastIndexOf("}") + 1)) : extractJson(call.content);
       success = {call, results};
     } catch (error) {
       lastError = error;
@@ -100,10 +100,8 @@ ${resumeText}`;
   return {
     adapter: "llm",
     execution: {
-      type: "upstream-x402",
-      upstreamModel: success.call.result.model,
-      upstreamPayment: success.call.paymentResponse,
-      note: "AI inference paid per-call over x402 (USDC on Base); settlement proof returned in PAYMENT-RESPONSE",
+      type: "llm-api",
+      model: success.call.model,
     },
     screeningId,
     results: success.results,

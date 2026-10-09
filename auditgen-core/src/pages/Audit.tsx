@@ -7,21 +7,21 @@ import ConsensusLoader from "@/components/ConsensusLoader";
 import AuditResults from "@/components/AuditResults";
 // Bulk Registry is not available yet - panel and toggle commented out.
 // import BulkAuditView from "@/components/BulkAuditView";
-import { useX402Bot, type AuditScreeningResults, type AuditSuccessResponse, type X402Stage } from "@/hooks/useX402Bot";
+import type { AuditScreeningResults } from "@/hooks/useX402Bot";
+import { useGatewayPay, type GatewayAuditResponse, type GatewayPayStage } from "@/hooks/useGatewayPay";
 import { useWallet } from "@/hooks/useWallet";
-import { explorerTxUrl, formatUsdtAmount } from "@/utils/botChain";
+import { BOT_CHAIN_NAME, BOT_GATEWAY_ADDRESS, explorerTxUrl, formatUsdtAmount } from "@/utils/botChain";
 import { generateCertificate } from "@/utils/generateCertificate";
 import { API_BASE } from "@/utils/apiBase";
 import ProofFooter from "@/components/ProofFooter";
 
-const stageHints: Record<X402Stage, string> = {
-  quote: "Requesting x402 quote from the audit service...",
-  chain: "Switching wallet to BOT Chain Mainnet (677)...",
-  balance: "Verifying USDT balance and allowance...",
-  approve: "ACTION REQUIRED: APPROVE USDT IN YOUR WALLET",
-  sign: "ACTION REQUIRED: SIGN PAYMENT IN YOUR WALLET",
-  settle: "Submitting payment for on-chain settlement...",
-  audit: "AI audit complete",
+const stageHints: Record<GatewayPayStage, string> = {
+  chain: "Switching to the configured BOT Chain network...",
+  balance: "Checking USDT balance and gateway allowance...",
+  approve: "ACTION REQUIRED: APPROVE USDT TO THE NEXA GATEWAY",
+  pay: "ACTION REQUIRED: SEND THE PAYMENT FROM YOUR WALLET",
+  confirm: "Waiting for your payment transaction to confirm...",
+  audit: "Verifying your transaction and running the AI audit...",
 };
 
 const Audit = () => {
@@ -31,14 +31,14 @@ const Audit = () => {
   const [mustHaveSkills, setMustHaveSkills] = useState("");
   const [resumeText, setResumeText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [payment, setPayment] = useState<AuditSuccessResponse["payment"] | null>(null);
-  const [receipt, setReceipt] = useState<AuditSuccessResponse["receipt"] | null>(null);
+  const [payment, setPayment] = useState<GatewayAuditResponse["payment"] | null>(null);
+  const [receipt, setReceipt] = useState<GatewayAuditResponse["receipt"] | null>(null);
   const [consensusTx, setConsensusTx] = useState<string | null>(null);
   const [screeningId, setScreeningId] = useState<string | null>(null);
   const [results, setResults] = useState<AuditScreeningResults | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { runAudit, isPaying, status, setStatus, stage } = useX402Bot();
+  const { runAudit, isPaying, status, setStatus, stage, pendingTransaction } = useGatewayPay();
   const { address, isConnected } = useWallet();
 
   const handleSubmit = useCallback(async () => {
@@ -56,8 +56,8 @@ const Audit = () => {
         jobDescription,
         mustHaveSkills,
         resumeText,
-      });
-      setResults(data.results);
+      }, 100_000n);
+      setResults(data.results as AuditScreeningResults);
       setPayment(data.payment ?? null);
       setReceipt(data.receipt ?? null);
       setConsensusTx(data.execution?.tx ?? null);
@@ -72,7 +72,7 @@ const Audit = () => {
   }, [jobTitle, jobDescription, mustHaveSkills, resumeText, runAudit, address, setStatus]);
 
   const canSubmit =
-    jobTitle.trim() && resumeText.trim() && !loading && !isPaying && isConnected && address;
+    jobTitle.trim() && resumeText.trim() && !loading && !isPaying && isConnected && address && BOT_GATEWAY_ADDRESS;
 
   const inputClass = "w-full bg-background border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-neon-green transition-all font-mono tracking-wide cyber-chamfer-sm";
 
@@ -86,7 +86,7 @@ const Audit = () => {
             Nexa AI Bridge
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-xs leading-relaxed tracking-wide">
-            <span style={{ color: "var(--neon-green)" }}>&gt;</span> Execute autonomous AI audits. Pay with <span className="text-foreground font-bold">0.10 USDT on BOT Chain Mainnet</span> to trigger the AI screening service.
+            <span style={{ color: "var(--neon-green)" }}>&gt;</span> Execute autonomous AI audits. Pay with <span className="text-foreground font-bold">0.10 USDT on {BOT_CHAIN_NAME}</span> directly from your wallet.
           </p>
         </div>
 
@@ -140,9 +140,10 @@ const Audit = () => {
                 <Sparkles className="w-5 h-5 mr-2" />
                 Run Decentralized AI Audit
               </Button>
-              <p className="text-[9px] text-muted-foreground italic tracking-wide flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" style={{ color: "var(--neon-green)" }} /> 0.10 USDT per audit · One wallet signature, no separate approvals.
+                <p className="text-[9px] text-muted-foreground italic tracking-wide flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3" style={{ color: "var(--neon-green)" }} /> 0.10 USDT per audit · One-time USDT approval, then each payment is sent by your wallet.
               </p>
+              {!BOT_GATEWAY_ADDRESS && <p className="text-xs p-2 border cyber-chamfer-sm" style={{ color: "var(--neon-red)", borderColor: "rgba(255,51,102,0.2)" }}>Direct payment gateway is not configured for this build.</p>}
               {error && (
                 <p className="text-xs p-2 border cyber-chamfer-sm" style={{ color: "var(--neon-red)", borderColor: "rgba(255,51,102,0.2)", background: "rgba(255,51,102,0.05)" }}>
                   {error}
@@ -158,16 +159,16 @@ const Audit = () => {
             <Coins className="w-5 h-5 flex-shrink-0" />
             <div className="text-xs tracking-wide">
               <span className="font-bold">Wallet connected.</span>{" "}
-              Each audit costs <span className="font-bold">0.10 USDT</span> on BOT Chain Mainnet - keep enough balance plus a little BOT for gas.
+              Each audit costs <span className="font-bold">0.10 USDT</span> on {BOT_CHAIN_NAME}. Keep enough USDT and native BOT for the payment and gas.
             </div>
           </div>
         )}
 
-        {/* x402 Payment Monitor */}
+        {/* Direct payment monitor */}
         {(loading || isPaying) && (
           <div className="cyber-card p-4 space-y-3 animate-pulse" style={{ borderColor: "rgba(0,255,136,0.2)", background: "rgba(0,255,136,0.02)" }}>
             <h4 className="text-[9px] font-display font-bold uppercase tracking-[0.2em] flex items-center gap-2" style={{ color: "var(--neon-green)" }}>
-              <Activity className="w-3 h-3" /> Nexa x402 Payment Flow
+              <Activity className="w-3 h-3" /> Direct Wallet Payment
             </h4>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
@@ -183,6 +184,14 @@ const Audit = () => {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {pendingTransaction && !results && (
+          <div className="cyber-card p-4 space-y-2" style={{ borderColor: "rgba(255,196,0,0.25)" }}>
+            <p className="text-xs font-bold" style={{ color: "var(--neon-cyan)" }}>Payment confirmed by your wallet.</p>
+            <p className="text-[10px] text-muted-foreground">If the API request failed, retry the same audit form. Nexa will reuse this payment instead of asking you to pay again.</p>
+            <a className="text-[10px] underline font-mono" style={{ color: "var(--neon-green)" }} href={explorerTxUrl(pendingTransaction)} target="_blank" rel="noopener noreferrer">View your payment transaction on BOT Scan</a>
           </div>
         )}
 
@@ -239,7 +248,7 @@ const Audit = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-display font-bold uppercase tracking-wider">Result Receipt</p>
-                      <p className="text-[9px] text-muted-foreground font-mono truncate">{receipt.resultHash.slice(0, 14)}…</p>
+                      <p className="text-[9px] text-muted-foreground font-mono truncate">{receipt.resultHash?.slice(0, 14) || "Result recorded"}…</p>
                     </div>
                     <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto shrink-0" />
                   </a>

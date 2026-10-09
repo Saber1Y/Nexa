@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import { explorerTxUrl } from "@/utils/botChain";
+import { BOT_CHAIN_NAME, explorerTxUrl } from "@/utils/botChain";
 
 interface CertData {
   match_score: number;
@@ -130,7 +130,7 @@ export function generateCertificate(data: CertData, jobTitle: string, meta: Cert
   doc.setFontSize(8);
 
   const proofs: Array<[string, string, string]> = [];
-  if (paymentTx) proofs.push(["USDT Payment (BOT Chain Mainnet)", paymentTx, explorerTxUrl(paymentTx)]);
+  if (paymentTx) proofs.push([`USDT Payment (${BOT_CHAIN_NAME})`, paymentTx, explorerTxUrl(paymentTx)]);
   if (receiptTx) proofs.push(["Result Receipt", receiptTx, explorerTxUrl(receiptTx)]);
   if (consensusTx) proofs.push(["AI Consensus", consensusTx, `${GENLAYER_EXPLORER}${consensusTx}`]);
 

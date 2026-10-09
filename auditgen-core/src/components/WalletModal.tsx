@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/hooks/useWallet";
+import { BOT_CHAIN_NAME } from "@/utils/botChain";
 
 /* ── Wallet registry (injected EIP-1193 wallets) ── */
 const WALLETS = [
@@ -236,7 +237,7 @@ export default function WalletModal({ open, onOpenChange }: WalletModalProps) {
         <div className="h-px bg-border/50" />
         <div className="px-6 py-3.5 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
           <Wallet className="w-3 h-3" />
-              Settlement on BOT Chain Mainnet · USDT
+              Settlement on {BOT_CHAIN_NAME} · USDT
         </div>
       </DialogContent>
     </Dialog>

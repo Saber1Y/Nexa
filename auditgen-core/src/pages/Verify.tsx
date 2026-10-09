@@ -3,7 +3,7 @@ import { Search, ShieldCheck, ExternalLink, CheckCircle2, XCircle, AlertTriangle
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import ScoreRing from "@/components/ScoreRing";
-import { explorerTxUrl, BOT_USDT_DECIMALS } from "@/utils/botChain";
+import { explorerTxUrl, BOT_USDT_DECIMALS, BOT_CHAIN_ID, BOT_CHAIN_NAME, BOT_EXPLORER_URL } from "@/utils/botChain";
 import { API_BASE } from "@/utils/apiBase";
 
 
@@ -237,7 +237,7 @@ const Verify = () => {
                 </div>
                 <div>
                   <h4 className="text-xs font-display font-bold uppercase tracking-wider">On-Chain Receipt</h4>
-                  <p className="text-[9px] text-muted-foreground tracking-wide">&gt; BOT Chain Mainnet (677) · receipt registry on <code style={{ color: "var(--neon-cyan)" }}>scan.botchain.ai</code></p>
+                  <p className="text-[9px] text-muted-foreground tracking-wide">&gt; {BOT_CHAIN_NAME} ({BOT_CHAIN_ID}) · receipt registry on <code style={{ color: "var(--neon-cyan)" }}>{BOT_EXPLORER_URL.replace(/^https?:\/\//, "")}</code></p>
                 </div>
               </div>
 

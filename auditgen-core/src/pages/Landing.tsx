@@ -20,6 +20,7 @@ import LanguageMarquee from "@/components/LanguageMarquee";
 import RoadmapBento from "@/components/RoadmapBento";
 import ProofFooter from "@/components/ProofFooter";
 import BridgeAnalytics from "@/components/BridgeAnalytics";
+import { BOT_CHAIN_NAME } from "@/utils/botChain";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -58,7 +59,7 @@ const Landing = () => {
 
               <p className="text-sm md:text-base text-muted-foreground max-w-xl mb-10 leading-relaxed tracking-wide mx-auto md:mx-0">
                 <span style={{ color: "var(--neon-green)" }}>&gt;</span> The native payment infrastructure for{" "}
-                <span className="text-foreground font-bold">AI agents</span>, settled in USDT on BOT Chain Mainnet.
+                <span className="text-foreground font-bold">AI services</span>, paid directly in USDT on {BOT_CHAIN_NAME}.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
@@ -109,19 +110,19 @@ const Landing = () => {
               {
                 icon: Cpu,
                 title: "USDT Payment Rails",
-                description: "0.10 USDT micropayments on BOT Chain Mainnet. One wallet signature settles each audit.",
+                description: "0.10 USDT audits paid directly through NexaGateway on BOT Chain Mainnet.",
                 neon: "var(--neon-green)",
               },
               {
                 icon: ShieldCheck,
-                title: "Triple-Verified Proof",
-                description: "Every audit ships a SHA-256 result hash, an AI consensus verdict, and an on-chain USDT payment receipt.",
+                title: "Payment and Result Proof",
+                description: "Every audit returns its payment transaction, a SHA-256 result hash, and an on-chain receipt.",
                 neon: "var(--neon-cyan)",
               },
               {
                 icon: Globe,
-                title: "Chain Abstraction",
-                description: "Hold USDT on BOT Chain Mainnet. Get AI results from the screening service. Nexa abstracts the payment flow.",
+                title: "Transparent Payment",
+                description: "Your wallet calls NexaGateway directly. The API verifies the payment before running the audit.",
                 neon: "var(--neon-magenta)",
               },
             ].map((feature) => (
@@ -147,27 +148,27 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* ═══════ x402 FLOW ═══════ */}
+      {/* ═══════ DIRECT PAYMENT FLOW ═══════ */}
       <section className="relative py-24 border-t" style={{ borderColor: "rgba(0,255,136,0.1)", background: "rgba(0,255,136,0.01)" }}>
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="text-center mb-16">
             <p className="font-label text-[10px] uppercase tracking-[0.3em] mb-3" style={{ color: "var(--neon-cyan)" }}>
-              &gt; PROTOCOL_HANDSHAKE
+              &gt; DIRECT_GATEWAY_FLOW
             </p>
             <h2 className="text-3xl md:text-5xl font-black text-foreground font-display uppercase tracking-wider">
-              The <span className="gradient-text">x402</span> Flow
+              The <span className="gradient-text">Payment</span> Flow
             </h2>
             <p className="text-sm text-muted-foreground mt-4 max-w-2xl mx-auto tracking-wide">
-              Autonomous payment negotiation via HTTP 402 - AI agents pay without human intervention.
+              Connect your wallet, confirm the USDT payment, and receive an auditable result.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { step: "01", icon: ShieldCheck, title: "Challenge", description: "Service returns a 402 challenge with price, asset and pay-to terms." },
-              { step: "02", icon: Wallet, title: "Settle", description: "Agent signs a payment authorization for 0.10 USDT." },
-              { step: "03", icon: BrainCircuit, title: "Audit", description: "AI validators screen the resume and reach a match verdict." },
-              { step: "04", icon: Award, title: "Anchor", description: "SHA-256 result hash is recorded with the payment receipt." },
+              { step: "01", icon: ShieldCheck, title: "Approve", description: "Approve USDT for NexaGateway if your wallet has not approved it yet." },
+              { step: "02", icon: Wallet, title: "Pay", description: "Confirm the 0.10 USDT NexaGateway payment in your wallet." },
+              { step: "03", icon: BrainCircuit, title: "Audit", description: "Gemini analyzes the resume after the API verifies your payment." },
+              { step: "04", icon: Award, title: "Verify", description: "Check the payment transaction and result receipt on BOT Scan." },
             ].map((step, i) => (
               <div key={step.step} className="relative group">
                 <div className="cyber-card p-6 h-full bg-background/50">
@@ -193,23 +194,23 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* ═══════ PRODUCTION READY ═══════ */}
+      {/* ═══════ VERIFIABLE PAYMENTS ═══════ */}
       <section className="relative py-24 border-t" style={{ borderColor: "rgba(0,255,136,0.1)" }}>
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-16">
             <p className="font-label text-[10px] uppercase tracking-[0.3em] mb-3" style={{ color: "var(--neon-magenta)" }}>
-              &gt; PRODUCTION_GRADE
+              &gt; ONCHAIN_VERIFICATION
             </p>
             <h2 className="text-3xl md:text-5xl font-black text-foreground font-display uppercase tracking-wider">
-              Production <span className="gradient-text">Ready</span>
+              Built for <span className="gradient-text">Verification</span>
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { icon: Lock, title: "Trust Selection", description: "Agent reputation scoring via onchain attestation history. Each audit builds a verifiable trust graph." },
-              { icon: Scale, title: "Built-in Arbitration", description: "GenLayer's Equivalence Principle provides consensus across 5 independent AI validators." },
-              { icon: Rocket, title: "Micro-Payment Throughput", description: "Sub-cent fees and instant 402 settlement enable high-volume audit registries at scale." },
+              { icon: Lock, title: "Direct Wallet Payment", description: "The user signs the payment transaction from their wallet to NexaGateway." },
+              { icon: Scale, title: "On-chain Service Terms", description: "The registry stores the active service, its provider, payment asset, and price." },
+              { icon: Rocket, title: "Verifiable Receipts", description: "A result hash and payment details can be checked against BOT Chain records." },
             ].map((feature) => (
               <div key={feature.title} className="cyber-card p-8 group hover:-translate-y-1 transition-all duration-200">
                 <div className="w-12 h-12 flex items-center justify-center mb-5 border" style={{ borderColor: "var(--neon-magenta)", boxShadow: "0 0 8px rgba(255,0,255,0.15)" }}>
@@ -223,9 +224,9 @@ const Landing = () => {
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             {[
-              { icon: Fuel, label: "One-Signature USDT", color: "var(--neon-green)" },
-              { icon: ShieldCheck, label: "Permit2 + EIP-712", color: "var(--neon-cyan)" },
-              { icon: Globe, label: "BOT Chain Mainnet", color: "var(--neon-magenta)" },
+              { icon: Fuel, label: "Direct USDT Payment", color: "var(--neon-green)" },
+              { icon: ShieldCheck, label: "On-chain Receipt", color: "var(--neon-cyan)" },
+              { icon: Globe, label: BOT_CHAIN_NAME, color: "var(--neon-magenta)" },
             ].map((badge) => (
               <span
                 key={badge.label}

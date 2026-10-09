@@ -1,7 +1,7 @@
 import "dotenv/config";
 import {createPublicClient, createWalletClient, http, keccak256, toBytes} from "viem";
 import {privateKeyToAccount} from "viem/accounts";
-import {BOT_CHAIN, BOT_RPC_URL, BOT_RECEIPT_REGISTRY, AUDIT_SERVICE_ID} from "./botConfig.mjs";
+import {BOT_CHAIN, BOT_CHAIN_ID, BOT_RPC_URL, BOT_RECEIPT_REGISTRY, AUDIT_SERVICE_ID} from "./botConfig.mjs";
 
 const abi = [{
   type: "function",
@@ -44,7 +44,8 @@ export async function recordReceiptOnChain({paymentId, payer, provider, asset, a
   return {recorded: true, tx: hash, registry: BOT_RECEIPT_REGISTRY, signer: account.address};
 }
 
-const REGISTRY_START_BLOCK = BigInt(process.env.NEXA_RECEIPT_REGISTRY_START_BLOCK || "25883956");
+const defaultRegistryStartBlock = BOT_CHAIN_ID === 677 ? "25875770" : "25883956";
+const REGISTRY_START_BLOCK = BigInt(process.env.NEXA_RECEIPT_REGISTRY_START_BLOCK || defaultRegistryStartBlock);
 
 const eventAbi = [{
   type: "event",

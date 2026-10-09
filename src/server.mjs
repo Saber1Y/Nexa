@@ -4,15 +4,17 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import cors from "cors";
-import {BOT_PAY_TO, BOT_USDT_ADDRESS, BOT_CHAIN_ID, BOT_NETWORK, BOT_CHAIN_NAME, AUDIT_PRICE_ATOMIC, AUDIT_SERVICE_ID, AUDIT_SERVICE_VERSION,
+import {keccak256, toBytes} from "viem";
+import {BOT_PAY_TO, BOT_USDT_ADDRESS, BOT_GATEWAY_ADDRESS, BOT_CHAIN_ID, BOT_NETWORK, BOT_CHAIN_NAME, AUDIT_PRICE_ATOMIC, AUDIT_SERVICE_ID, AUDIT_SERVICE_VERSION,
   MATCH_PRICE_ATOMIC, MATCH_SERVICE_ID, SKILLS_PRICE_ATOMIC, SKILLS_SERVICE_ID, validateBotConfig, explorerTx} from "./botConfig.mjs";
-import {encodeBase64Url, paymentRequired, parsePaymentSignature, verifyPayment, settlePayment} from "./botX402.mjs";
 import {listServices, registerBuiltInService} from "./serviceRegistry.mjs";
 import {runAudit} from "./aiAdapter.mjs";
+import {llmApiConfigured} from "./llmApi.mjs";
 import {recordReceiptOnChain, getReceiptOnChain} from "./receipts.mjs";
+import {verifyGatewayPayment} from "./gatewayVerifier.mjs";
 
 const app = express();
-app.use(cors({exposedHeaders: ["PAYMENT-REQUIRED", "PAYMENT-RESPONSE"]}));
+app.use(cors());
 app.use(express.json({limit: "256kb"}));
 
 function logEvent(event, fields = {}) {
@@ -35,6 +37,7 @@ app.use((req, res, next) => {
 registerBuiltInService();
 
 const seenPayments = new Set();
+const inFlightPayments = new Set();
 const DATA_DIR = process.env.NEXA_DATA_DIR || (process.env.VERCEL ? "/tmp/nexa" : path.join(process.cwd(), "data"));
 const AUDIT_LOG = path.join(DATA_DIR, "audits.json");
 const MAX_AUDITS = 200;
@@ -45,6 +48,10 @@ function loadAudits() {
   } catch {
     return [];
   }
+}
+
+for (const audit of loadAudits()) {
+  if (audit.paymentId) seenPayments.add(audit.paymentId);
 }
 
 function appendAudit(record) {
@@ -70,22 +77,57 @@ function resultHash(value) {
   return `0x${crypto.createHash("sha256").update(value).digest("hex")}`;
 }
 
-function paymentId(payment) {
-  return `0x${crypto.createHash("sha256").update(`${payment.payer}:${payment.auth.nonce}:${AUDIT_SERVICE_ID}`).digest("hex")}`;
+async function verifyDirectPayment(req, res, serviceId, priceAtomic) {
+  const txHash = typeof req.body?.paymentTx === "string" ? req.body.paymentTx : "";
+  if (!txHash) {
+    res.status(400).json({error: "payment_tx_required", detail: "Submit a successful BOT Chain NexaGateway payment transaction."});
+    return null;
+  }
+
+  try {
+    const {paymentTx: _ignored, ...paidRequest} = req.body;
+    const requestHash = keccak256(toBytes(stableStringify(paidRequest)));
+    const verified = await verifyGatewayPayment({txHash, expectedServiceId: serviceId, expectedAmount: priceAtomic, expectedRequestHash: requestHash});
+    const id = verified.paymentId;
+    if (seenPayments.has(id)) {
+      res.status(409).json({error: "duplicate_payment", paymentId: id});
+      return null;
+    }
+    if (inFlightPayments.has(id)) {
+      res.status(409).json({error: "payment_in_progress", paymentId: id});
+      return null;
+    }
+    inFlightPayments.add(id);
+    return {
+      id,
+      verified,
+      settlement: {success: true, transaction: txHash, network: BOT_NETWORK, payer: verified.payer, amount: verified.amount},
+    };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "invalid gateway payment";
+    res.status(400).json({error: "invalid_gateway_payment", detail});
+    return null;
+  }
 }
 
-function send402(req, res, error, serviceId = AUDIT_SERVICE_ID, priceAtomic = AUDIT_PRICE_ATOMIC) {
-  const body = paymentRequired(`${req.protocol}://${req.get("host")}${req.originalUrl}`, error, serviceId, priceAtomic);
-  res.setHeader("PAYMENT-REQUIRED", encodeBase64Url(body));
-  return res.status(402).json(body);
+async function saveServiceReceipt({id, verified, serviceId, priceAtomic, result}) {
+  const outputHash = resultHash(stableStringify({serviceId, serviceVersion: "1", results: result}));
+  try {
+    const receipt = await recordReceiptOnChain({paymentId: id, payer: verified.payer, provider: BOT_PAY_TO, asset: BOT_USDT_ADDRESS, amount: priceAtomic, serviceId, resultHash: outputHash});
+    logEvent(receipt.recorded ? "receipt_recorded" : "receipt_failed", {service: serviceId, paymentId: id, tx: receipt.tx, reason: receipt.reason, url: receipt.tx ? explorerTx(receipt.tx) : undefined});
+    return {outputHash, receipt};
+  } catch (error) {
+    logEvent("receipt_failed", {service: serviceId, paymentId: id, reason: error instanceof Error ? error.message : String(error)});
+    return {outputHash, receipt: {recorded: false, reason: error instanceof Error ? error.message : String(error)}};
+  }
 }
 
 
-const health = (req, res) => res.json({status: "ok", product: "Nexa", network: BOT_NETWORK, chainName: BOT_CHAIN_NAME, chainId: BOT_CHAIN_ID, asset: BOT_USDT_ADDRESS, payTo: BOT_PAY_TO, priceAtomic: AUDIT_PRICE_ATOMIC});
+const health = (req, res) => res.json({status: "ok", product: "Nexa", network: BOT_NETWORK, chainName: BOT_CHAIN_NAME, chainId: BOT_CHAIN_ID, asset: BOT_USDT_ADDRESS, payTo: BOT_PAY_TO, gateway: BOT_GATEWAY_ADDRESS || null, paymentMode: "direct-gateway", aiReady: llmApiConfigured(), priceAtomic: AUDIT_PRICE_ATOMIC});
 app.get("/health", health);
 app.get("/api/health", health);
 
-app.get("/api/services", (req, res) => res.json({x402Version: 2, services: listServices()}));
+app.get("/api/services", (req, res) => res.json({paymentMode: "direct-gateway", network: BOT_NETWORK, services: listServices().filter((service) => service.id === AUDIT_SERVICE_ID)}));
 
 app.get("/api/stats", (req, res) => {
   const audits = loadAudits();
@@ -151,55 +193,55 @@ app.get("/api/verify/:paymentId", async (req, res) => {
 
 app.post("/api/audit", async (req, res) => {
   const startedAt = Date.now();
-  const resourceUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  const signatureHeader = req.header("PAYMENT-SIGNATURE");
+  const directPaymentTx = typeof req.body?.paymentTx === "string" ? req.body.paymentTx : "";
 
   const {jobTitle = "", jobDescription = "", mustHaveSkills = "", resumeText = ""} = req.body || {};
   if (!jobTitle || typeof jobTitle !== "string") return res.status(400).json({error: "jobTitle is required"});
   if (!resumeText || typeof resumeText !== "string" || !resumeText.trim()) return res.status(400).json({error: "resumeText is required"});
 
-  if (!signatureHeader) {
-    logEvent("payment_required", {service: AUDIT_SERVICE_ID, path: "/api/audit"});
-    return send402(req, res, undefined, AUDIT_SERVICE_ID, AUDIT_PRICE_ATOMIC);
+  if (!directPaymentTx) {
+    logEvent("payment_required", {service: AUDIT_SERVICE_ID, path: "/api/audit", mode: "direct-gateway"});
+    return res.status(400).json({error: "payment_tx_required", detail: "Submit a successful BOT Chain NexaGateway payment transaction."});
   }
 
   let verified;
   try {
-    const payload = parsePaymentSignature(signatureHeader);
-    verified = await verifyPayment(payload, resourceUrl, AUDIT_SERVICE_ID, AUDIT_PRICE_ATOMIC);
+    const {paymentTx: _ignored, ...paidRequest} = req.body;
+    const requestHash = keccak256(toBytes(stableStringify(paidRequest)));
+    verified = await verifyGatewayPayment({
+      txHash: directPaymentTx,
+      expectedServiceId: AUDIT_SERVICE_ID,
+      expectedAmount: AUDIT_PRICE_ATOMIC,
+      expectedRequestHash: requestHash,
+    });
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "invalid payment";
-    logEvent("payment_rejected", {service: AUDIT_SERVICE_ID, reason: detail});
-    return send402(req, res, detail, AUDIT_SERVICE_ID, AUDIT_PRICE_ATOMIC);
+    const detail = error instanceof Error ? error.message : "invalid gateway payment";
+    logEvent("payment_rejected", {service: AUDIT_SERVICE_ID, tx: directPaymentTx, reason: detail});
+    return res.status(400).json({error: "invalid_gateway_payment", detail});
   }
 
-  const id = paymentId(verified);
+  const id = verified.paymentId;
   if (seenPayments.has(id)) {
     logEvent("duplicate_payment", {service: AUDIT_SERVICE_ID, paymentId: id});
     return res.status(409).json({error: "duplicate_payment", paymentId: id});
   }
+  if (inFlightPayments.has(id)) return res.status(409).json({error: "payment_in_progress", paymentId: id});
 
   let settlement;
-  try {
-    settlement = await settlePayment(verified);
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    logEvent("settlement_failed", {service: AUDIT_SERVICE_ID, paymentId: id, payer: verified.payer, reason: detail});
-    return res.status(402).json({error: "settlement_failed", detail});
-  }
-  seenPayments.add(id);
+  settlement = {success: true, transaction: directPaymentTx, network: BOT_NETWORK, payer: verified.payer, amount: verified.amount};
+  inFlightPayments.add(id);
   logEvent("settled", {service: AUDIT_SERVICE_ID, payer: verified.payer, amount: AUDIT_PRICE_ATOMIC, tx: settlement.transaction, url: explorerTx(settlement.transaction)});
-  res.setHeader("PAYMENT-RESPONSE", encodeBase64Url(settlement));
 
   let audit;
   try {
     audit = await runAudit({jobTitle, jobDescription, mustHaveSkills, resumeText, payer: verified.payer});
   } catch (error) {
+    inFlightPayments.delete(id);
     return res.status(502).json({
       error: "execution_failed",
       detail: error instanceof Error ? error.message : String(error),
       payment: {...settlement, paymentId: id},
-      refund: "Service execution failed after settlement. The payment is on-chain; contact the provider with this paymentId for a refund.",
+      refund: "Your BOT Chain payment is confirmed. Fix the service error and retry the same audit; the existing payment can be reused.",
     });
   }
 
@@ -248,6 +290,9 @@ app.post("/api/audit", async (req, res) => {
     durationMs: Date.now() - startedAt,
   });
 
+  seenPayments.add(id);
+  inFlightPayments.delete(id);
+
   logEvent("completed", {service: AUDIT_SERVICE_ID, paymentId: id, ms: Date.now() - startedAt});
 
   return res.json({
@@ -270,6 +315,11 @@ try {
   console.error(`Nexa configuration error: ${error.message}`);
   if (process.env.NODE_ENV === "production") process.exitCode = 1;
 }
+
+app.use(["/api/match", "/api/skills"], (req, res, next) => {
+  if (req.method !== "POST") return next();
+  return res.status(410).json({error: "service_unavailable", detail: "This legacy service is disabled. Nexa accepts payments through the BOT Chain gateway only."});
+});
 
 app.post("/api/match", async (req, res) => {
   const resourceUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
@@ -411,4 +461,3 @@ if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
   const server = app.listen(Number(process.env.PORT || 3402), () => console.log("Nexa BOT bridge listening"));
   process.on("SIGINT", () => server.close(() => process.exit(0)));
 }
-

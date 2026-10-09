@@ -14,11 +14,14 @@ contract NexaGateway {
 
     mapping(address => uint256) public nonce;
     mapping(bytes32 => bool) public paid;
+    mapping(bytes32 => bool) public resultAnchored;
 
     error InactiveService();
     error ZeroPrice();
+    error AssetMismatch();
     error AlreadyPaid();
     error PayFailed();
+    error UnpaidPayment();
     error NotAnchorer();
     error AlreadyAnchored();
 
@@ -48,6 +51,7 @@ contract NexaGateway {
         NexaServiceRegistry.Service memory s = services.getService(serviceId);
         if (!s.active) revert InactiveService();
         if (s.price == 0) revert ZeroPrice();
+        if (s.asset != address(usdt)) revert AssetMismatch();
         uint256 n = nonce[msg.sender]++;
         paymentId = keccak256(abi.encode(msg.sender, serviceId, requestHash, n));
         if (paid[paymentId]) revert AlreadyPaid();
@@ -67,6 +71,9 @@ contract NexaGateway {
     }
 
     function anchorResult(bytes32 paymentId, bytes32 resultHash) external onlyAnchorer {
+        if (!paid[paymentId]) revert UnpaidPayment();
+        if (resultAnchored[paymentId]) revert AlreadyAnchored();
+        resultAnchored[paymentId] = true;
         emit ResultAnchored(paymentId, resultHash);
     }
 }
