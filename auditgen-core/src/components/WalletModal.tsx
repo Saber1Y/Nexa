@@ -113,7 +113,7 @@ export default function WalletModal({ open, onOpenChange }: WalletModalProps) {
             <DialogDescription className="text-sm text-muted-foreground pt-1">
               {isConnected
                 ? "Your EVM wallet is connected to Nexa."
-                : "Select a wallet to sign tUSDT audit payments."}
+                : "Select a wallet to sign USDT audit payments."}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -236,7 +236,7 @@ export default function WalletModal({ open, onOpenChange }: WalletModalProps) {
         <div className="h-px bg-border/50" />
         <div className="px-6 py-3.5 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
           <Wallet className="w-3 h-3" />
-          Settlement on BOT Chain · tUSDT
+              Settlement on BOT Chain Mainnet · USDT
         </div>
       </DialogContent>
     </Dialog>

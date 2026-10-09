@@ -10,7 +10,7 @@ const roadmapItems = [
     emoji: "💳",
     title: "Multi-Currency Rails",
     description:
-      "Expand payment options beyond tUSDT on BOT Chain to additional stablecoins and chains.",
+      "Expand payment options beyond USDT on BOT Chain to additional stablecoins and chains.",
     className: "md:col-span-1",
   },
   {

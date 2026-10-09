@@ -1,5 +1,5 @@
 const techs = [
-  "BOT Chain", "tUSDT", "x402 Protocol", "Permit2", "EIP-712", "GenLayer",
+  "BOT Chain", "USDT", "x402 Protocol", "Payment Proof", "EIP-712", "GenLayer",
   "AI Consensus", "SHA-256", "Receipt Registry", "Result Hash",
   "Exact Payments", "402 Challenge", "BOT Scan", "Smart Contract"
 ];

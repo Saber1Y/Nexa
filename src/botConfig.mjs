@@ -45,3 +45,4 @@ export function validateBotConfig() {
 }
 
 export const explorerTx = (hash) => `${BOT_EXPLORER_URL.replace(/\/$/, "")}/tx/${hash}`;
+export const BOT_GATEWAY_ADDRESS = process.env.NEXA_GATEWAY_ADDRESS || "";

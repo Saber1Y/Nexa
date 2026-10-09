@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/hooks/useWallet";
 import WalletModal from "@/components/WalletModal";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/nexa-mark.svg";
 
 const navLinks = [
   { path: "/", label: "Home" },
@@ -28,7 +28,7 @@ const Navbar = () => {
       <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-xl" style={{ borderColor: "var(--neon-green)", borderBottomWidth: "1px", boxShadow: "0 1px 15px rgba(0,255,136,0.08)" }}>
         <div className="container mx-auto flex items-center justify-between h-16 px-4">
           <Link to="/" className="flex items-center gap-3 group">
-            <img src={logo} alt="Nexa" className="w-8 h-8 object-contain" width={32} height={32} style={{ filter: "drop-shadow(0 0 4px rgba(0,255,136,0.4))" }} />
+            <img src={logo} alt="" aria-hidden="true" className="w-8 h-8 object-contain" width={32} height={32} style={{ filter: "drop-shadow(0 0 4px rgba(139,240,180,0.32))" }} />
             <span className="font-display text-base font-bold tracking-widest uppercase neon-text" style={{ color: "var(--neon-green)" }}>
               NEXA
             </span>

@@ -1,18 +1,18 @@
 import type { Address } from "viem";
 
-// ── BOT Chain (Bohr Testnet) configuration ─────────────────────────────────
-export const BOT_CHAIN_ID = 968;
-export const BOT_CHAIN_HEX = "0x3c8";
-export const BOT_CHAIN_NAME = "BOT Chain Bohr Testnet";
-export const BOT_NETWORK = "eip155:968";
-export const BOT_RPC_URL = "https://rpc.bohr.life";
-export const BOT_EXPLORER_URL = "https://scan.bohr.life";
-export const BOT_USDT_ADDRESS: Address = "0x75edC9335175Fc0552D51D48439F229c10420fe3";
+// ── BOT Chain Mainnet configuration ─────────────────────────────────────────
+export const BOT_CHAIN_ID = 677;
+export const BOT_CHAIN_HEX = "0x2a5";
+export const BOT_CHAIN_NAME = "BOT Chain Mainnet";
+export const BOT_NETWORK = "eip155:677";
+export const BOT_RPC_URL = "https://rpc.botchain.ai";
+export const BOT_EXPLORER_URL = "https://scan.botchain.ai";
+export const BOT_USDT_ADDRESS: Address = "0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C";
 export const BOT_USDT_DECIMALS = 6;
 export const BOT_PERMIT2_ADDRESS: Address = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 export const BOT_EXACT_PERMIT2_PROXY: Address = "0x402085c248EeA27D92E8b30b2C58ed07f9E20001";
 
-// One-time ERC-20 approval budget: 10 tUSDT (many audits before re-approving).
+// One-time ERC-20 approval budget: 10 USDT (many audits before re-approving).
 export const DEFAULT_APPROVAL_BUDGET = 10_000_000n;
 
 export const BOT_CHAIN = {

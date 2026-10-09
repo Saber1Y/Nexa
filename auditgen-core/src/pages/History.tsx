@@ -188,7 +188,7 @@ const History = () => {
                             <Copy className="w-3 h-3" />
                           )}
                         </button>
-                        <span>· {results.seniority || "Unknown"} · {audit.amount ? `${(Number(audit.amount) / 1e6).toFixed(6)} tUSDT` : ""}</span>
+                        <span>· {results.seniority || "Unknown"} · {audit.amount ? `${(Number(audit.amount) / 1e6).toFixed(6)} USDT` : ""}</span>
                       </div>
                     </div>
                     <div className="text-right shrink-0 hidden md:block">

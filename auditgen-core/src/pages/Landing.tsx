@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import LanguageMarquee from "@/components/LanguageMarquee";
 import RoadmapBento from "@/components/RoadmapBento";
+import ProofFooter from "@/components/ProofFooter";
 import BridgeAnalytics from "@/components/BridgeAnalytics";
 
 const Landing = () => {
@@ -57,7 +58,7 @@ const Landing = () => {
 
               <p className="text-sm md:text-base text-muted-foreground max-w-xl mb-10 leading-relaxed tracking-wide mx-auto md:mx-0">
                 <span style={{ color: "var(--neon-green)" }}>&gt;</span> The native payment infrastructure for{" "}
-                <span className="text-foreground font-bold">AI agents</span>, settled in tUSDT on BOT Chain via x402 + Permit2.
+                <span className="text-foreground font-bold">AI agents</span>, settled in USDT on BOT Chain Mainnet.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
@@ -107,20 +108,20 @@ const Landing = () => {
             {[
               {
                 icon: Cpu,
-                title: "tUSDT Payment Rails",
-                description: "0.10 tUSDT micropayments via x402 + Permit2. One wallet signature settles each audit.",
+                title: "USDT Payment Rails",
+                description: "0.10 USDT micropayments on BOT Chain Mainnet. One wallet signature settles each audit.",
                 neon: "var(--neon-green)",
               },
               {
                 icon: ShieldCheck,
                 title: "Triple-Verified Proof",
-                description: "Every audit ships a SHA-256 result hash, an AI consensus verdict, and an on-chain tUSDT payment receipt.",
+                description: "Every audit ships a SHA-256 result hash, an AI consensus verdict, and an on-chain USDT payment receipt.",
                 neon: "var(--neon-cyan)",
               },
               {
                 icon: Globe,
                 title: "Chain Abstraction",
-                description: "Hold tUSDT on BOT Chain. Get AI results from the screening service. Nexa abstracts the payment flow.",
+                description: "Hold USDT on BOT Chain Mainnet. Get AI results from the screening service. Nexa abstracts the payment flow.",
                 neon: "var(--neon-magenta)",
               },
             ].map((feature) => (
@@ -164,7 +165,7 @@ const Landing = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
               { step: "01", icon: ShieldCheck, title: "Challenge", description: "Service returns a 402 challenge with price, asset and pay-to terms." },
-              { step: "02", icon: Wallet, title: "Settle", description: "Agent signs an EIP-712 Permit2 authorization for 0.10 tUSDT." },
+              { step: "02", icon: Wallet, title: "Settle", description: "Agent signs a payment authorization for 0.10 USDT." },
               { step: "03", icon: BrainCircuit, title: "Audit", description: "AI validators screen the resume and reach a match verdict." },
               { step: "04", icon: Award, title: "Anchor", description: "SHA-256 result hash is recorded with the payment receipt." },
             ].map((step, i) => (
@@ -222,9 +223,9 @@ const Landing = () => {
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             {[
-              { icon: Fuel, label: "One-Signature tUSDT", color: "var(--neon-green)" },
+              { icon: Fuel, label: "One-Signature USDT", color: "var(--neon-green)" },
               { icon: ShieldCheck, label: "Permit2 + EIP-712", color: "var(--neon-cyan)" },
-              { icon: Globe, label: "BOT Chain Testnet", color: "var(--neon-magenta)" },
+              { icon: Globe, label: "BOT Chain Mainnet", color: "var(--neon-magenta)" },
             ].map((badge) => (
               <span
                 key={badge.label}
@@ -260,21 +261,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* ═══════ FOOTER ═══════ */}
-      <footer className="border-t py-12" style={{ borderColor: "rgba(0,255,136,0.1)" }}>
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6 text-[10px] text-muted-foreground tracking-[0.15em] uppercase">
-          <div>
-            <span style={{ color: "var(--neon-green)", opacity: 0.5 }}>&gt;</span> Nexa Bridge · Agents on BOT Chain
-          </div>
-          <div>
-            Built on <span className="font-bold" style={{ color: "var(--neon-green)" }}>BOT Chain</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="https://scan.bohr.life" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">BOT Scan</a>
-            <a href="https://genlayer.com" target="_blank" className="hover:text-foreground transition-colors">GenLayer</a>
-          </div>
-        </div>
-      </footer>
+      <ProofFooter />
     </div>
   );
 };

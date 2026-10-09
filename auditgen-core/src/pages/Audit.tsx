@@ -12,12 +12,13 @@ import { useWallet } from "@/hooks/useWallet";
 import { explorerTxUrl, formatUsdtAmount } from "@/utils/botChain";
 import { generateCertificate } from "@/utils/generateCertificate";
 import { API_BASE } from "@/utils/apiBase";
+import ProofFooter from "@/components/ProofFooter";
 
 const stageHints: Record<X402Stage, string> = {
   quote: "Requesting x402 quote from the audit service...",
-  chain: "Switching wallet to BOT Chain (968)...",
-  balance: "Verifying tUSDT balance and Permit2 allowance...",
-  approve: "ACTION REQUIRED: APPROVE tUSDT IN YOUR WALLET",
+  chain: "Switching wallet to BOT Chain Mainnet (677)...",
+  balance: "Verifying USDT balance and allowance...",
+  approve: "ACTION REQUIRED: APPROVE USDT IN YOUR WALLET",
   sign: "ACTION REQUIRED: SIGN PAYMENT IN YOUR WALLET",
   settle: "Submitting payment for on-chain settlement...",
   audit: "AI audit complete",
@@ -85,7 +86,7 @@ const Audit = () => {
             Nexa AI Bridge
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-xs leading-relaxed tracking-wide">
-            <span style={{ color: "var(--neon-green)" }}>&gt;</span> Execute autonomous AI audits. Pay with <span className="text-foreground font-bold">0.10 tUSDT on BOT Chain</span> (x402 + Permit2) to trigger the AI screening service.
+            <span style={{ color: "var(--neon-green)" }}>&gt;</span> Execute autonomous AI audits. Pay with <span className="text-foreground font-bold">0.10 USDT on BOT Chain Mainnet</span> to trigger the AI screening service.
           </p>
         </div>
 
@@ -140,7 +141,7 @@ const Audit = () => {
                 Run Decentralized AI Audit
               </Button>
               <p className="text-[9px] text-muted-foreground italic tracking-wide flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" style={{ color: "var(--neon-green)" }} /> 0.10 tUSDT per audit · Permit2 signature, no separate approvals.
+                <ShieldCheck className="w-3 h-3" style={{ color: "var(--neon-green)" }} /> 0.10 USDT per audit · One wallet signature, no separate approvals.
               </p>
               {error && (
                 <p className="text-xs p-2 border cyber-chamfer-sm" style={{ color: "var(--neon-red)", borderColor: "rgba(255,51,102,0.2)", background: "rgba(255,51,102,0.05)" }}>
@@ -157,7 +158,7 @@ const Audit = () => {
             <Coins className="w-5 h-5 flex-shrink-0" />
             <div className="text-xs tracking-wide">
               <span className="font-bold">Wallet connected.</span>{" "}
-              Each audit costs <span className="font-bold">0.10 tUSDT</span> on BOT Chain testnet - keep enough balance plus a little tBOT for gas.
+              Each audit costs <span className="font-bold">0.10 USDT</span> on BOT Chain Mainnet - keep enough balance plus a little BOT for gas.
             </div>
           </div>
         )}
@@ -204,7 +205,7 @@ const Audit = () => {
                 &gt; Settlement, receipt and consensus records. Click any link to verify.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {/* tUSDT Payment */}
+                {/* USDT Payment */}
                 {payment ? (
                   <a href={explorerTxUrl(payment.transaction)} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2.5 p-3 border transition-all group cyber-chamfer-sm" style={{ borderColor: "rgba(0,255,136,0.15)" }}>
@@ -212,8 +213,8 @@ const Audit = () => {
                       <Star className="w-4 h-4" style={{ color: "var(--neon-green)" }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-display font-bold uppercase tracking-wider">tUSDT Payment</p>
-                      <p className="text-[9px] text-muted-foreground font-mono truncate">{formatUsdtAmount(payment.amount)} tUSDT · {payment.transaction.slice(0, 12)}…</p>
+                      <p className="text-[10px] font-display font-bold uppercase tracking-wider">USDT Payment</p>
+                      <p className="text-[9px] text-muted-foreground font-mono truncate">{formatUsdtAmount(payment.amount)} USDT · {payment.transaction.slice(0, 12)}…</p>
                     </div>
                     <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto shrink-0" />
                   </a>
@@ -223,7 +224,7 @@ const Audit = () => {
                       <Star className="w-4 h-4" style={{ color: "var(--neon-green)" }} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-display font-bold uppercase tracking-wider">tUSDT Payment</p>
+                      <p className="text-[10px] font-display font-bold uppercase tracking-wider">USDT Payment</p>
                       <p className="text-[9px] font-bold" style={{ color: "var(--neon-green)" }}>✓ Settled on BOT Chain</p>
                     </div>
                   </div>
@@ -318,16 +319,7 @@ const Audit = () => {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t py-8 mt-12" style={{ borderColor: "rgba(0,255,136,0.1)" }}>
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-muted-foreground tracking-[0.15em] uppercase">
-          <div><span style={{ color: "var(--neon-green)", opacity: 0.5 }}>&gt;</span> Nexa Bridge · Settlement by BOT Chain · Audit by GenLayer</div>
-          <div className="flex gap-4">
-            <a href="https://scan.bohr.life" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">BOT Scan</a>
-            <a href="https://genlayer.com" target="_blank" className="hover:text-foreground">GenLayer</a>
-          </div>
-        </div>
-      </footer>
+      <ProofFooter />
     </div>
   );
 };

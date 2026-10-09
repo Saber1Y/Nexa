@@ -55,17 +55,17 @@ const foundPayload = {
     onChain: {
       found: true,
       recorded: true,
-      registry: "0xC37C0a8988BB174f2a9b199b8B8f0Fb51f5c848D",
+      registry: "0x4a29F92A5Bf3F1e242a8bcdc5F7009e67395c5B1",
       paymentId: PAYMENT_ID,
       serviceId: `0x${"52".repeat(32)}`,
       payer: "0x3F5b96A494061F7338Da529e3047809Ac6a7FB84",
       provider: "0x772c86be44eAF536df1B5f8924417acCC6bB4028",
-      asset: "0x75edC9335175Fc0552D51D48439F229c10420fe3",
+      asset: "0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C",
       amount: "100000",
       resultHash: `0x${"11".repeat(32)}`,
       tx: `0x${"33".repeat(32)}`,
       blockNumber: "25889451",
-      explorerUrl: `https://scan.bohr.life/tx/0x${"33".repeat(32)}`,
+      explorerUrl: `https://scan.botchain.ai/tx/0x${"33".repeat(32)}`,
     },
   },
 };
@@ -114,8 +114,8 @@ describe("Verify page", () => {
 
     await waitFor(() => hasText(container, "✓ Receipt Integrity Verified"));
     expect(hasText(container, "On-Chain Receipt")).toBe(true);
-    expect(hasText(container, "0xC37C0a8988BB174f2a9b199b8B8f0Fb51f5c848D")).toBe(true);
-    expect(hasText(container, "0.100000 tUSDT")).toBe(true);
+    expect(hasText(container, "0x4a29F92A5Bf3F1e242a8bcdc5F7009e67395c5B1")).toBe(true);
+    expect(hasText(container, "0.100000 USDT")).toBe(true);
     expect(hasText(container, "#25889451")).toBe(true);
     expect(hasText(container, "BOT Chain Engineer")).toBe(true);
     expect(hasText(container, "PARTIAL_FIT")).toBe(true);
@@ -124,9 +124,9 @@ describe("Verify page", () => {
     expect(hasText(container, "From Nexa Ledger")).toBe(true);
 
     const receiptLink = links(container).find((a) => (a.textContent || "").includes("Receipt Tx 0x333333"));
-    expect(receiptLink?.getAttribute("href")).toBe(`https://scan.bohr.life/tx/0x${"33".repeat(32)}`);
+    expect(receiptLink?.getAttribute("href")).toBe(`https://scan.botchain.ai/tx/0x${"33".repeat(32)}`);
     const paymentLink = links(container).find((a) => (a.textContent || "").includes("Payment Tx"));
-    expect(paymentLink?.getAttribute("href")).toBe(`https://scan.bohr.life/tx/0x${"22".repeat(32)}`);
+    expect(paymentLink?.getAttribute("href")).toBe(`https://scan.botchain.ai/tx/0x${"22".repeat(32)}`);
   });
 
   it("flags a result hash mismatch", async () => {

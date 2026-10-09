@@ -50,7 +50,7 @@ const BridgeAnalytics = () => {
     { label: "Success Rate", value: stats.successRate, suffix: "%", icon: <TrendingUp className="w-5 h-5" />, neon: "var(--neon-green)" },
     { label: "Avg Score", value: stats.avgScore, suffix: "/100", icon: <Zap className="w-5 h-5" />, neon: "var(--neon-cyan)" },
     { label: "Avg Consensus", value: stats.avgTime, suffix: "s", icon: <Clock className="w-5 h-5" />, neon: "var(--neon-cyan)" },
-    { label: "Paid Volume", value: Number(stats.totalPaidTusdt), suffix: " tUSDT", icon: <DollarSign className="w-5 h-5" />, neon: "var(--neon-magenta)", extra: `${stats.receiptCount} on-chain receipts` },
+    { label: "Paid Volume", value: Number(stats.totalPaidTusdt), suffix: " USDT", icon: <DollarSign className="w-5 h-5" />, neon: "var(--neon-magenta)", extra: `${stats.receiptCount} on-chain receipts` },
   ];
 
   return (

@@ -61,7 +61,7 @@ interface VerifyResponse {
 
 const formatTusdt = (atomic?: string): string => {
   if (!atomic) return "--";
-  return `${(Number(atomic) / 10 ** BOT_USDT_DECIMALS).toFixed(BOT_USDT_DECIMALS)} tUSDT`;
+  return `${(Number(atomic) / 10 ** BOT_USDT_DECIMALS).toFixed(BOT_USDT_DECIMALS)} USDT`;
 };
 
 const shorten = (value?: string | null, head = 10, tail = 8): string => {
@@ -237,7 +237,7 @@ const Verify = () => {
                 </div>
                 <div>
                   <h4 className="text-xs font-display font-bold uppercase tracking-wider">On-Chain Receipt</h4>
-                  <p className="text-[9px] text-muted-foreground tracking-wide">&gt; BOT Chain (968) · receipt registry on <code style={{ color: "var(--neon-cyan)" }}>scan.bohr.life</code></p>
+                  <p className="text-[9px] text-muted-foreground tracking-wide">&gt; BOT Chain Mainnet (677) · receipt registry on <code style={{ color: "var(--neon-cyan)" }}>scan.botchain.ai</code></p>
                 </div>
               </div>
 

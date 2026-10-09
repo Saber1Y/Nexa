@@ -272,17 +272,17 @@ export function describePaymentError(failure: PaymentFailure): string {
     return `Duplicate payment${id}: this payment was already settled. Start a new audit to pay again.`;
   }
   if (code === "settlement_failed") {
-    return `Payment settlement failed:${detail} No tUSDT was captured - please retry.`;
+    return `Payment settlement failed:${detail} No USDT was captured - please retry.`;
   }
   if (status === 502 || code === "execution_failed") {
     const refund = body?.refund ? ` ${body.refund}` : "";
     return `AI execution failed after payment.${detail}${refund}`;
   }
   if (code === "insufficient_funds") {
-    return "Insufficient tUSDT balance on BOT testnet. Fund your wallet with at least 0.10 tUSDT and retry.";
+    return "Insufficient USDT balance on BOT Chain Mainnet. Fund your wallet with at least 0.10 USDT and retry.";
   }
   if (code === "PERMIT2_ALLOWANCE_REQUIRED") {
-    return "Token allowance is still below the payment amount. Approve tUSDT for Permit2 and retry.";
+    return "Token allowance is still below the payment amount. Approve USDT and retry.";
   }
   if (code === "authorization_expired") {
     return "The payment authorization expired before settlement. Please retry.";
@@ -374,9 +374,9 @@ export function useX402Bot() {
         }
         const amount = BigInt(accepted.amount);
         const priceLabel = formatUsdtAmount(amount);
-        setStatus(`Quote received: ${priceLabel} tUSDT on BOT testnet`);
+      setStatus(`Quote received: ${priceLabel} USDT on BOT Chain Mainnet`);
 
-        // 2. Chain: make sure the wallet is on BOT Chain (968).
+      // 2. Chain: make sure the wallet is on BOT Chain Mainnet (677).
         setStage("chain");
         setStatus(`Switching wallet to ${BOT_CHAIN.name}...`);
         await ensureBotChain(provider);
@@ -385,7 +385,7 @@ export function useX402Bot() {
 
         // 3. Balance + allowance check.
         setStage("balance");
-        setStatus("Checking tUSDT balance and Permit2 allowance...");
+      setStatus("Checking USDT balance and allowance...");
         let balance: bigint;
         let allowance: bigint;
         try {
@@ -412,8 +412,8 @@ export function useX402Bot() {
         }
         if (balance < amount) {
           throw new Error(
-            `Insufficient tUSDT balance: you have ${formatUsdtAmount(balance)} tUSDT, ` +
-              `this audit costs ${priceLabel} tUSDT on BOT testnet.`,
+            `Insufficient USDT balance: you have ${formatUsdtAmount(balance)} USDT, ` +
+              `this audit costs ${priceLabel} USDT on BOT Chain Mainnet.`,
           );
         }
 
@@ -426,7 +426,7 @@ export function useX402Bot() {
         // 4. One-time Permit2 allowance approval (only when below the amount).
         if (allowance < amount) {
           setStage("approve");
-          setStatus(`Approving tUSDT for Permit2 (one-time ${formatUsdtAmount(DEFAULT_APPROVAL_BUDGET)} tUSDT budget)...`);
+          setStatus(`Approving USDT (one-time ${formatUsdtAmount(DEFAULT_APPROVAL_BUDGET)} USDT budget)...`);
           const approvalHash = await wallet.writeContract({
             address: BOT_USDT_ADDRESS,
             abi: erc20Abi,
@@ -436,7 +436,7 @@ export function useX402Bot() {
           setStatus("Approval submitted - waiting for on-chain confirmation...");
           const approvalReceipt = await publicClient.waitForTransactionReceipt({ hash: approvalHash });
           if (approvalReceipt.status !== "success") {
-            throw new Error("tUSDT approval transaction failed on-chain. Please retry.");
+            throw new Error("USDT approval transaction failed on-chain. Please retry.");
           }
           setStatus("Allowance confirmed");
         }

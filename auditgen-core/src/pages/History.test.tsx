@@ -47,7 +47,7 @@ const auditRecord = {
   recorded: true,
   payer: "0x3F5b96A494061F7338Da529e3047809Ac6a7FB84",
   amount: "100000",
-  asset: "0x75edC9335175Fc0552D51D48439F229c10420fe3",
+  asset: "0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C",
   completedAt: "2026-10-06T08:49:33.072Z",
 };
 
@@ -102,8 +102,8 @@ describe("History page", () => {
 
     const paymentLink = links(container).find((a) => (a.textContent || "").includes("Payment"));
     const receiptLink = links(container).find((a) => (a.textContent || "").includes("Receipt"));
-    expect(paymentLink?.getAttribute("href")).toBe(`https://scan.bohr.life/tx/${PAYMENT_TX}`);
-    expect(receiptLink?.getAttribute("href")).toBe(`https://scan.bohr.life/tx/${RECEIPT_TX}`);
+    expect(paymentLink?.getAttribute("href")).toBe(`https://scan.botchain.ai/tx/${PAYMENT_TX}`);
+    expect(receiptLink?.getAttribute("href")).toBe(`https://scan.botchain.ai/tx/${RECEIPT_TX}`);
     expect(hasText(container, `0x${"11".repeat(32)}`)).toBe(true);
   });
 

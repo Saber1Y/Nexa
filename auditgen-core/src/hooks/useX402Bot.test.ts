@@ -23,9 +23,9 @@ const resource = {
 
 const accepted: PaymentAccept = {
   scheme: "exact",
-  network: "eip155:968",
+  network: "eip155:677",
   amount: "100000",
-  asset: "0x75edC9335175Fc0552D51D48439F229c10420fe3",
+  asset: "0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C",
   payTo: "0x772c86be44eAF536df1B5f8924417acCC6bB4028",
   maxTimeoutSeconds: 300,
   extra: {
@@ -145,7 +145,7 @@ describe("extractPaymentRequired", () => {
 
   it("falls back to the JSON body", () => {
     const result = extractPaymentRequired(null, required);
-    expect(result.accepts[0].network).toBe("eip155:968");
+    expect(result.accepts[0].network).toBe("eip155:677");
   });
 
   it("throws when neither source carries accepts", () => {
@@ -165,7 +165,7 @@ describe("describePaymentError", () => {
     const msg = describePaymentError({ status: 402, body: { error: "settlement_failed", detail: "insufficient allowance" } });
     expect(msg).toContain("settlement failed");
     expect(msg).toContain("insufficient allowance");
-    expect(msg).toContain("No tUSDT was captured");
+    expect(msg).toContain("No USDT was captured");
   });
 
   it("explains execution failures with refund details", () => {
@@ -196,7 +196,7 @@ describe("isUserRejection", () => {
 });
 
 describe("formatUsdtAmount", () => {
-  it("converts 6-decimal atomic amounts to tUSDT", () => {
+  it("converts 6-decimal atomic amounts to USDT", () => {
     expect(formatUsdtAmount(100000n)).toBe("0.10");
     expect(formatUsdtAmount("10000000")).toBe("10.00");
     expect(formatUsdtAmount(0n)).toBe("0.00");
