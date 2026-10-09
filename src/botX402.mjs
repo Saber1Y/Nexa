@@ -1,6 +1,7 @@
 import {createPublicClient, createWalletClient, encodeFunctionData, http, parseAbi, verifyTypedData} from "viem";
 import {privateKeyToAccount} from "viem/accounts";
 import {
+  BOT_CHAIN,
   BOT_CHAIN_ID,
   BOT_EXACT_PERMIT2_PROXY,
   BOT_FACILITATOR_KEY,
@@ -13,16 +14,9 @@ import {
   AUDIT_SERVICE_ID,
 } from "./botConfig.mjs";
 
-const chain = {
-  id: BOT_CHAIN_ID,
-  name: "BOT Chain Bohr Testnet",
-  nativeCurrency: {name: "tBOT", symbol: "tBOT", decimals: 18},
-  rpcUrls: {default: {http: [BOT_RPC_URL]}},
-};
-
-export const publicClient = createPublicClient({chain, transport: http(BOT_RPC_URL)});
+export const publicClient = createPublicClient({chain: BOT_CHAIN, transport: http(BOT_RPC_URL)});
 const facilitator = privateKeyToAccount(BOT_FACILITATOR_KEY);
-export const walletClient = createWalletClient({account: facilitator, chain, transport: http(BOT_RPC_URL)});
+export const walletClient = createWalletClient({account: facilitator, chain: BOT_CHAIN, transport: http(BOT_RPC_URL)});
 
 const erc20Abi = parseAbi([
   "function balanceOf(address) view returns (uint256)",

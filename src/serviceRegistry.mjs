@@ -1,3 +1,5 @@
+import {BOT_NETWORK, BOT_USDT_ADDRESS} from "./botConfig.mjs";
+
 const services = new Map();
 
 export function registerBuiltInService() {
@@ -7,8 +9,8 @@ export function registerBuiltInService() {
     description: "AI-powered candidate analysis using the existing Nexa audit pipeline.",
     endpoint: "/api/audit",
     priceAtomic: "100000",
-    asset: process.env.BOT_USDT_ADDRESS || "0x75edC9335175Fc0552D51D48439F229c10420fe3",
-    network: "eip155:968",
+    asset: BOT_USDT_ADDRESS,
+    network: BOT_NETWORK,
     active: true,
     version: "1",
   });
@@ -18,8 +20,8 @@ export function registerBuiltInService() {
     description: "Semantic match of a job description against a resume with weighted skills, ATS fit and ranked gaps.",
     endpoint: "/api/match",
     priceAtomic: "50000",
-    asset: process.env.BOT_USDT_ADDRESS || "0x75edC9335175Fc0552D51D48439F229c10420fe3",
-    network: "eip155:968",
+    asset: BOT_USDT_ADDRESS,
+    network: BOT_NETWORK,
     active: true,
     version: "1",
   });
@@ -29,8 +31,8 @@ export function registerBuiltInService() {
     description: "Extracts hard/soft skills, tools, frameworks, years, certifications and deduplicates into a clean normalized list.",
     endpoint: "/api/skills",
     priceAtomic: "25000",
-    asset: process.env.BOT_USDT_ADDRESS || "0x75edC9335175Fc0552D51D48439F229c10420fe3",
-    network: "eip155:968",
+    asset: BOT_USDT_ADDRESS,
+    network: BOT_NETWORK,
     active: true,
     version: "1",
   });

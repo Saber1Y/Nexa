@@ -4,8 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import cors from "cors";
-import {BOT_PAY_TO, BOT_USDT_ADDRESS, AUDIT_PRICE_ATOMIC, AUDIT_SERVICE_ID, AUDIT_SERVICE_VERSION,
-  MATCH_PRICE_ATOMIC, MATCH_SERVICE_ID, SKILLS_PRICE_ATOMIC, SKILLS_SERVICE_ID, validateBotConfig} from "./botConfig.mjs";
+import {BOT_PAY_TO, BOT_USDT_ADDRESS, BOT_CHAIN_ID, BOT_NETWORK, BOT_CHAIN_NAME, AUDIT_PRICE_ATOMIC, AUDIT_SERVICE_ID, AUDIT_SERVICE_VERSION,
+  MATCH_PRICE_ATOMIC, MATCH_SERVICE_ID, SKILLS_PRICE_ATOMIC, SKILLS_SERVICE_ID, validateBotConfig, explorerTx} from "./botConfig.mjs";
 import {encodeBase64Url, paymentRequired, parsePaymentSignature, verifyPayment, settlePayment} from "./botX402.mjs";
 import {listServices, registerBuiltInService} from "./serviceRegistry.mjs";
 import {runAudit} from "./aiAdapter.mjs";
@@ -14,6 +14,24 @@ import {recordReceiptOnChain, getReceiptOnChain} from "./receipts.mjs";
 const app = express();
 app.use(cors({exposedHeaders: ["PAYMENT-REQUIRED", "PAYMENT-RESPONSE"]}));
 app.use(express.json({limit: "256kb"}));
+
+function logEvent(event, fields = {}) {
+  const detail = Object.entries(fields)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .map(([key, value]) => `${key}=${value}`)
+    .join(" ");
+  console.log(`[nexa] ${new Date().toISOString()} ${event}${detail ? ` ${detail}` : ""}`);
+}
+
+app.use((req, res, next) => {
+  if (req.originalUrl === "/health" || req.originalUrl === "/api/health") return next();
+  const startedAt = Date.now();
+  res.on("finish", () => {
+    logEvent("http", {method: req.method, path: req.originalUrl, status: res.statusCode, ms: Date.now() - startedAt});
+  });
+  next();
+});
+
 registerBuiltInService();
 
 const seenPayments = new Set();
@@ -63,7 +81,7 @@ function send402(req, res, error, serviceId = AUDIT_SERVICE_ID, priceAtomic = AU
 }
 
 
-const health = (req, res) => res.json({status: "ok", product: "Nexa", network: "eip155:968", asset: BOT_USDT_ADDRESS, payTo: BOT_PAY_TO, priceAtomic: AUDIT_PRICE_ATOMIC});
+const health = (req, res) => res.json({status: "ok", product: "Nexa", network: BOT_NETWORK, chainName: BOT_CHAIN_NAME, chainId: BOT_CHAIN_ID, asset: BOT_USDT_ADDRESS, payTo: BOT_PAY_TO, priceAtomic: AUDIT_PRICE_ATOMIC});
 app.get("/health", health);
 app.get("/api/health", health);
 
@@ -140,26 +158,37 @@ app.post("/api/audit", async (req, res) => {
   if (!jobTitle || typeof jobTitle !== "string") return res.status(400).json({error: "jobTitle is required"});
   if (!resumeText || typeof resumeText !== "string" || !resumeText.trim()) return res.status(400).json({error: "resumeText is required"});
 
-  if (!signatureHeader) return send402(req, res, undefined, AUDIT_SERVICE_ID, AUDIT_PRICE_ATOMIC);
+  if (!signatureHeader) {
+    logEvent("payment_required", {service: AUDIT_SERVICE_ID, path: "/api/audit"});
+    return send402(req, res, undefined, AUDIT_SERVICE_ID, AUDIT_PRICE_ATOMIC);
+  }
 
   let verified;
   try {
     const payload = parsePaymentSignature(signatureHeader);
     verified = await verifyPayment(payload, resourceUrl, AUDIT_SERVICE_ID, AUDIT_PRICE_ATOMIC);
   } catch (error) {
-    return send402(req, res, error instanceof Error ? error.message : "invalid payment", AUDIT_SERVICE_ID, AUDIT_PRICE_ATOMIC);
+    const detail = error instanceof Error ? error.message : "invalid payment";
+    logEvent("payment_rejected", {service: AUDIT_SERVICE_ID, reason: detail});
+    return send402(req, res, detail, AUDIT_SERVICE_ID, AUDIT_PRICE_ATOMIC);
   }
 
   const id = paymentId(verified);
-  if (seenPayments.has(id)) return res.status(409).json({error: "duplicate_payment", paymentId: id});
+  if (seenPayments.has(id)) {
+    logEvent("duplicate_payment", {service: AUDIT_SERVICE_ID, paymentId: id});
+    return res.status(409).json({error: "duplicate_payment", paymentId: id});
+  }
 
   let settlement;
   try {
     settlement = await settlePayment(verified);
   } catch (error) {
-    return res.status(402).json({error: "settlement_failed", detail: error instanceof Error ? error.message : String(error)});
+    const detail = error instanceof Error ? error.message : String(error);
+    logEvent("settlement_failed", {service: AUDIT_SERVICE_ID, paymentId: id, payer: verified.payer, reason: detail});
+    return res.status(402).json({error: "settlement_failed", detail});
   }
   seenPayments.add(id);
+  logEvent("settled", {service: AUDIT_SERVICE_ID, payer: verified.payer, amount: AUDIT_PRICE_ATOMIC, tx: settlement.transaction, url: explorerTx(settlement.transaction)});
   res.setHeader("PAYMENT-RESPONSE", encodeBase64Url(settlement));
 
   let audit;
@@ -195,6 +224,11 @@ app.post("/api/audit", async (req, res) => {
   } catch (error) {
     onChainReceipt = {recorded: false, reason: error instanceof Error ? error.message : String(error)};
   }
+  if (onChainReceipt.recorded) {
+    logEvent("receipt_recorded", {service: AUDIT_SERVICE_ID, paymentId: id, tx: onChainReceipt.tx, url: explorerTx(onChainReceipt.tx)});
+  } else {
+    logEvent("receipt_failed", {service: AUDIT_SERVICE_ID, paymentId: id, reason: onChainReceipt.reason || "unknown"});
+  }
 
   appendAudit({
     paymentId: id,
@@ -214,6 +248,8 @@ app.post("/api/audit", async (req, res) => {
     durationMs: Date.now() - startedAt,
   });
 
+  logEvent("completed", {service: AUDIT_SERVICE_ID, paymentId: id, ms: Date.now() - startedAt});
+
   return res.json({
     success: true,
     payment: {...settlement, paymentId: id},
@@ -229,7 +265,7 @@ app.post("/api/audit", async (req, res) => {
 
 try {
   validateBotConfig();
-  console.log(`Nexa BOT service ready on ${process.env.PORT || 3402}; payTo=${BOT_PAY_TO}; price=${AUDIT_PRICE_ATOMIC} atomic tUSDT`);
+  console.log(`Nexa BOT service ready on ${process.env.PORT || 3402}; chain=${BOT_CHAIN_NAME} (${BOT_NETWORK}); payTo=${BOT_PAY_TO}; price=${AUDIT_PRICE_ATOMIC} atomic USDT`);
 } catch (error) {
   console.error(`Nexa configuration error: ${error.message}`);
   if (process.env.NODE_ENV === "production") process.exitCode = 1;
@@ -258,6 +294,7 @@ app.post("/api/match", async (req, res) => {
     return res.status(402).json({error: "settlement_failed", detail: error instanceof Error ? error.message : String(error)});
   }
   seenPayments.add(id);
+  logEvent("settled", {service: MATCH_SERVICE_ID, payer: verified.payer, amount: MATCH_PRICE_ATOMIC, tx: settlement.transaction, url: explorerTx(settlement.transaction)});
   res.setHeader("PAYMENT-RESPONSE", encodeBase64Url(settlement));
   const system = `You are an ATS matcher. Return ONLY JSON with keys match_score (0-100), overlaps (string[]), gaps (string[]), verdict ("STRONG","GOOD","WEAK","NONE"), summary (string<=80). Compare JD vs resume semantically.`;
   const user = `JOB_DESCRIPTION:\n${jobDescription}\n\nRESUME:\n${resumeText}`;
@@ -270,7 +307,12 @@ app.post("/api/match", async (req, res) => {
     return res.status(502).json({error: "execution_failed", detail: error instanceof Error ? error.message : String(error), payment: {...settlement, paymentId: id}});
   }
   const outputHash = resultHash(stableStringify({serviceId: MATCH_SERVICE_ID, serviceVersion: "1", results: result}));
-  try { await recordReceiptOnChain({paymentId: id, payer: verified.payer, provider: BOT_PAY_TO, asset: BOT_USDT_ADDRESS, amount: MATCH_PRICE_ATOMIC, serviceId: MATCH_SERVICE_ID, endpointHash: "", resultHash: outputHash, durationMs: 0}); } catch {}
+  try {
+    const receipt = await recordReceiptOnChain({paymentId: id, payer: verified.payer, provider: BOT_PAY_TO, asset: BOT_USDT_ADDRESS, amount: MATCH_PRICE_ATOMIC, serviceId: MATCH_SERVICE_ID, resultHash: outputHash});
+    logEvent(receipt.recorded ? "receipt_recorded" : "receipt_failed", {service: MATCH_SERVICE_ID, paymentId: id, tx: receipt.tx, reason: receipt.reason, url: receipt.tx ? explorerTx(receipt.tx) : undefined});
+  } catch (error) {
+    logEvent("receipt_failed", {service: MATCH_SERVICE_ID, paymentId: id, reason: error instanceof Error ? error.message : String(error)});
+  }
   res.json({ok: true, serviceId: MATCH_SERVICE_ID, paymentId: id, settlement, results: result});
 });
 
@@ -297,6 +339,7 @@ app.post("/api/skills", async (req, res) => {
     return res.status(402).json({error: "settlement_failed", detail: error instanceof Error ? error.message : String(error)});
   }
   seenPayments.add(id);
+  logEvent("settled", {service: SKILLS_SERVICE_ID, payer: verified.payer, amount: SKILLS_PRICE_ATOMIC, tx: settlement.transaction, url: explorerTx(settlement.transaction)});
   res.setHeader("PAYMENT-RESPONSE", encodeBase64Url(settlement));
   const system = `Extract skills from text. Return ONLY JSON with keys hard_skills (string[]), soft_skills (string[]), tools (string[]), frameworks (string[]), certifications (string[]), years (number), raw_count (number). Deduplicate, lowercase, clean.`;
   const user = `TEXT:\n${content}`;
@@ -309,7 +352,12 @@ app.post("/api/skills", async (req, res) => {
     return res.status(502).json({error: "execution_failed", detail: error instanceof Error ? error.message : String(error), payment: {...settlement, paymentId: id}});
   }
   const outputHash = resultHash(stableStringify({serviceId: SKILLS_SERVICE_ID, serviceVersion: "1", results: result}));
-  try { await recordReceiptOnChain({paymentId: id, payer: verified.payer, provider: BOT_PAY_TO, asset: BOT_USDT_ADDRESS, amount: SKILLS_PRICE_ATOMIC, serviceId: SKILLS_SERVICE_ID, endpointHash: "", resultHash: outputHash, durationMs: 0}); } catch {}
+  try {
+    const receipt = await recordReceiptOnChain({paymentId: id, payer: verified.payer, provider: BOT_PAY_TO, asset: BOT_USDT_ADDRESS, amount: SKILLS_PRICE_ATOMIC, serviceId: SKILLS_SERVICE_ID, resultHash: outputHash});
+    logEvent(receipt.recorded ? "receipt_recorded" : "receipt_failed", {service: SKILLS_SERVICE_ID, paymentId: id, tx: receipt.tx, reason: receipt.reason, url: receipt.tx ? explorerTx(receipt.tx) : undefined});
+  } catch (error) {
+    logEvent("receipt_failed", {service: SKILLS_SERVICE_ID, paymentId: id, reason: error instanceof Error ? error.message : String(error)});
+  }
   res.json({ok: true, serviceId: SKILLS_SERVICE_ID, paymentId: id, settlement, results: result});
 });
 

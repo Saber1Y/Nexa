@@ -1,22 +1,30 @@
 # Nexa - Machine-Payable AI Services on BOT Chain
 
 Nexa is an AI-service marketplace that agents pay for per call over HTTP `402 Payment Required` (x402 v2).
-A buyer agent sends a request, gets challenged with a payment requirement, signs a Permit2 authorization, settles USDT atomically on BOT Chain Bohr Testnet, receives the AI result, and can independently verify the result hash that was anchored on-chain.
+A buyer agent sends a request, gets challenged with a payment requirement, signs a payment authorization, settles USDT atomically on BOT Chain Mainnet, receives the AI result, and can independently verify the result hash that was anchored on-chain.
 
 One real paid service runs end to end today: `resume-intelligence-v1` (candidate/resume intelligence audit).
 
-Everything in this repository was verified against BOT Chain Bohr Testnet (chain id `968`).
+Everything in this repository was verified against BOT Chain Mainnet (chain id `677`).
 Nothing is mocked in the payment path: the settlement transaction, the receipt transaction, and the receipt lookup are real on-chain calls.
 
 Live deployment: https://nexa-ai-bridge-kappa.vercel.app
 The Vercel project is connected to `https://github.com/Saber1Y/Nexa`, so every push to `main` deploys the app.
+
+### Mainnet proof
+
+- Chain ID: `677`
+- Registry Address: `0x6Ae462BC2AeA78b41aB638cADd18af6cf40cDF72`
+- Latest Receipt: `0x74e309a43cabf660...` (`saveStrategy`)
+- Built on [BOT Chain](https://botchain.ai)
+- Follow [@use_auralens on X](https://x.com/use_auralens)
 
 ## Payment protocol
 
 The server is the source of truth for the protocol, implemented in `src/botX402.mjs`.
 
 1. `POST /api/audit` without payment returns `402` with a `PAYMENT-REQUIRED` header (base64url JSON: `x402Version`, `accepts[]`, `extensions`).
-2. The client signs an EIP-712 `PermitWitnessTransferFrom` message against the canonical Permit2 domain (`chainId 968`) for the exact price in atomic tUSDT units.
+2. The client signs the configured payment authorization for BOT Chain Mainnet (`chainId 677`) for the exact price in atomic USDT units.
 3. The client retries with a `PAYMENT-SIGNATURE` header (base64url JSON: `x402Version`, `resource`, `accepted`, `payload.signature`, `payload.permit2Authorization`).
 4. The server verifies the typed-data signature, the payer balance, and the token allowance, then settles through the x402 exact-token Permit2 settlement proxy on BOT Chain.
 5. Only after settlement succeeds does the AI service execute.
@@ -38,12 +46,12 @@ Express server (src/server.mjs)
   |- src/receipts.mjs               record + read on-chain receipts
   |- src/serviceRegistry.mjs        registered services + prices
   |- src/botConfig.mjs              chain / token / Permit2 / proxy / registry config
-BOT Chain Bohr Testnet (chain id 968, RPC https://rpc.bohr.life)
-  |- tUSDT 0x75edC9335175Fc0552D51D48439F229c10420fe3 (6 decimals, not EIP-3009)
+BOT Chain Mainnet (chain id 677, RPC https://rpc.botchain.ai)
+   |- USDT 0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C (6 decimals)
   |- Permit2 0x000000000022D473030F116dDEE9F6B43aC78BA3 (canonical, witness path)
   |- x402 exact Permit2 proxy 0x402085c248EeA27D92E8b30b2C58ed07f9E20001
-  |- NexaServiceRegistry 0x6A2C234080Da1329b0418E4d5Dc34b2004D464bF
-  |- NexaReceiptRegistry 0xC37C0a8988BB174f2a9b199b8B8f0Fb51f5c848D
+   |- NexaServiceRegistry 0x4d5845487a11491575aFE5E63554E45D3b553f51
+  |- NexaReceiptRegistry 0x4a29F92A5Bf3F1e242a8bcdc5F7009e67395c5B1
 frontend (auditgen-core/, Vite + React + TS, strict + strictNullChecks)
 ```
 
@@ -56,12 +64,12 @@ Set `NEXA_AI_ADAPTER=llm` (default) for the working path.
 
 ## Contracts
 
-Both contracts are Solidity 0.8.24, built with Foundry (`forge build` clean), and deployed to Bohr Testnet by `0x3F5b96A494061F7338Da529e3047809Ac6a7FB84`.
+Both contracts are Solidity 0.8.24, built with Foundry (`forge build` clean), and deployed to BOT Chain Mainnet (chain id 677) by `0x3F5b96A494061F7338Da529e3047809Ac6a7FB84`.
 
 | Contract | Address | Deploy transaction |
 | --- | --- | --- |
-| `NexaServiceRegistry` | `0x6A2C234080Da1329b0418E4d5Dc34b2004D464bF` | `0xff01fc7ea42255b9ce35bf858deb0a2dcc809f84b5123a7696aa06a3dcdbd618` |
-| `NexaReceiptRegistry` | `0xC37C0a8988BB174f2a9b199b8B8f0Fb51f5c848D` | `0x10c4b2c9868d366b74f1b8be253d519cba9fbf1ed62c05bf90169ef7f5c7b8f2` (block `25883956`) |
+| `NexaServiceRegistry` | `0x4d5845487a11491575aFE5E63554E45D3b553f51` | `0x774aa7e08d7e48d56df1507db2abea7e23098e6fdc29bfe14ed34a0aa5146c8f` |
+| `NexaReceiptRegistry` | `0x4a29F92A5Bf3F1e242a8bcdc5F7009e67395c5B1` | `0x1c270907cdf8ef0d386a55d066d44c984916ef3bbe8c7b0da028c5c862d81feb` |
 
 Registered service on `NexaServiceRegistry`:
 
@@ -70,20 +78,20 @@ Registered service on `NexaServiceRegistry`:
 | service id | `resume-intelligence-v1` |
 | endpoint | `POST /api/audit` (endpoint hash `0x0ef2aa3a...47cf0e606`) |
 | provider / fee recipient | `0x772c86be44eAF536df1B5f8924417acCC6bB4028` |
-| price | `100000` atomic tUSDT = `0.10 tUSDT` |
+| price | `100000` atomic USDT = `0.10 USDT` |
 | registration transaction | `0x42cfcc36602001792522af58b7e902dc68b56b7df675d52706bbfd9301e1e8db` |
 
 Settlement infrastructure used by the server (not written by this repo):
 
 | Role | Address |
 | --- | --- |
-| tUSDT (6 decimals) | `0x75edC9335175Fc0552D51D48439F229c10420fe3` |
+| USDT (6 decimals) | `0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C` |
 | canonical Permit2 | `0x000000000022D473030F116dDEE9F6B43aC78BA3` |
 | x402 exact-token Permit2 settlement proxy | `0x402085c248EeA27D92E8b30b2C58ed07f9E20001` |
 
 ## Verified end-to-end runs
 
-All transactions below are real Bohr Testnet transactions, independently verifiable at `https://scan.bohr.life/tx/<hash>`.
+The runs below are the earlier Bohr Testnet runs, independently verifiable at `https://scan.bohr.life/tx/<hash>`. The current BOT Chain Mainnet deployment writes receipts to `NexaReceiptRegistry` (`0x4a29F92A5Bf3F1e242a8bcdc5F7009e67395c5B1`), viewable at `https://scan.botchain.ai/address/0x4a29F92A5Bf3F1e242a8bcdc5F7009e67395c5B1`.
 
 | Payment (settlement) transaction | Receipt transaction | Result |
 | --- | --- | --- |
@@ -109,7 +117,7 @@ Negative-path verification (all asserted by `npm run test:x402`):
 ### Prerequisites
 
 - Node.js 20+
-- a funded Bohr Testnet account (tUSDT for the audit price plus a little tBOT for gas)
+- a funded BOT Chain Mainnet account (USDT for the audit price plus a little BOT for gas)
 - optional: Foundry, for rebuilding the contracts
 - optional: an injected EVM wallet in the browser, for the frontend payment flow
 
@@ -132,15 +140,15 @@ Required values:
 
 | Variable | Meaning |
 | --- | --- |
-| `BOT_RPC_URL`, `BOT_CHAIN_ID`, `BOT_EXPLORER_URL` | defaults already point at Bohr Testnet |
-| `BOT_USDT_ADDRESS` | tUSDT token, 6 decimals |
+| `BOT_RPC_URL`, `BOT_CHAIN_ID`, `BOT_EXPLORER_URL` | defaults already point at BOT Chain Mainnet |
+| `BOT_USDT_ADDRESS` | USDT token, 6 decimals |
 | `BOT_PERMIT2_ADDRESS`, `BOT_EXACT_PERMIT2_PROXY` | Permit2 and the x402 settlement proxy |
 | `NEXA_PAY_TO_ADDRESS` | address that receives the service fees |
 | `NEXA_FACILITATOR_PRIVATE_KEY` | server-side key used only to pay settlement gas |
 | `NEXA_RECEIPT_SIGNER_PRIVATE_KEY` | server-side key that writes receipts to `NexaReceiptRegistry` |
-| `NEXA_AUDIT_PRICE_ATOMIC` | price in atomic tUSDT (`100000` = `0.10`) |
+| `NEXA_AUDIT_PRICE_ATOMIC` | price in atomic USDT (`100000` = `0.10`) |
 | `NEXA_SERVICE_ID` | must match a service registered in `NexaServiceRegistry` |
-| `NEXA_RECEIPT_REGISTRY_ADDRESS` | `0xC37C0a8988BB174f2a9b199b8B8f0Fb51f5c848D` |
+| `NEXA_RECEIPT_REGISTRY_ADDRESS` | `0x4a29F92A5Bf3F1e242a8bcdc5F7009e67395c5B1` |
 | `NEXA_UPSTREAM_*` | upstream paid LLM endpoint, asset and key |
 
 Keep `.env` out of version control (it is gitignored).
@@ -150,7 +158,7 @@ Never commit private keys, seeds, or API keys.
 
 ```bash
 npm start
-# Nexa BOT service ready on 3402; payTo=0x772c...; price=100000 atomic tUSDT
+# Nexa BOT service ready on 3402; chain=BOT Chain Mainnet (eip155:677); payTo=0x772c...; price=100000 atomic USDT
 # Nexa BOT bridge listening
 ```
 
